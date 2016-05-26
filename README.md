@@ -16,5 +16,10 @@ But I highly you to install the Anaconda distribution (https://www.continuum.io/
 
 ## How-To
 
+1. First you need to extract all the dihedral angles from your trajectory
+```bash
+python extract_dihedral_angles.py
+```
+
 ## License
 MIT
