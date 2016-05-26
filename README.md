@@ -14,7 +14,7 @@ You need, at a minimum:
 
 But I highly you to install the Anaconda distribution (https://www.continuum.io/downloads) if you want a clean python environnment with nearly all the prerequisites already installed (NumPy, H5py, Pandas).
 
-For the rest:
+For the rest, you just have to do this,
 ```bash
 pip install pyopencl mdanalysis
 ```
