@@ -12,7 +12,7 @@ You need, at a minimum:
 * PyOpenCL
 * MDAnalysis
 
-But I highly you to install the Anaconda distribution 
+But I highly you to install the Anaconda distribution (https://www.continuum.io/downloads)
 
 ## How-To
 
