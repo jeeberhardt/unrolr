@@ -22,19 +22,19 @@ pip install pyopencl mdanalysis
 
 ## Tutorial
 
-1 . First you need to extract all the dihedral angles from your trajectory
+1 . First you need to extract all the C-alpha dihedral angles from your trajectory
 ```bash
-python extract_dihedral_angles.py -t topology.psf -d traj_1.dcd -t ca
+python extract_dihedral_angles.py -t topology.psf -d traj_1.dcd
 ```
 
 2 . Find the optimal rc parameter
 ```bash
-python optimize.py -d dihedral_angles.h5 --rc-range 0.1 1.0 0.01 --opt-rc -t ca
+python optimize.py -d dihedral_angles.h5 --rc-range 0.1 1.0 0.01 --opt-rc
 ```
 
 3 . Run SPE algorithm
 ```bash
-python spe.py -d dihedral_angles.h5 -c 10000 -t ca -r 0.27
+python spe.py -d dihedral_angles.h5 -c 10000 -r 0.27
 ```
 
 ## License
