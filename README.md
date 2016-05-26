@@ -18,7 +18,7 @@ But I highly you to install the Anaconda distribution (https://www.continuum.io/
 
 1. First you need to extract all the dihedral angles from your trajectory
 ```bash
-python extract_dihedral_angles.py -t topology.(pdb|psf) -d traj_1.(dcd|xtc) ... traj_n.(dcd|xtc) -t ca|(phi psi) -s <selection>
+python extract_dihedral_angles.py -t topology.(pdb|psf) -d traj_1.(dcd|xtc) -t ca
 ```
 
 2. Find the optimal rc parameter
