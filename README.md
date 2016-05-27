@@ -52,7 +52,7 @@ export PYOPENCL_CTX='0:1'
 
 ## How-To
 
-1 . First you need to extract all the C-alpha dihedral angles from your trajectory
+1 . First you need to extract all the C-alpha (or the Phi/Psi) dihedral angles from your trajectory
 ```bash
 python extract_dihedral_angles.py -t topology.psf -d traj.dcd
 ```
