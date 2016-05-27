@@ -31,8 +31,8 @@ python extract_dihedral_angles.py -t topology.psf -d traj_1.dcd
 **Command line options**
 * -t/--top: topology file (pdb, psf)
 * -d/--dcd: single trajectory or list of trajectories (dcd, xtc)
-* -s/--selection: selection commands (ex: resid 1:10)(default: all)(documentation:https://goo.gl/4t1mGb)
-* -t/--dihedral: dihedral type you want extracted (ca, phi or psi)(default: ca)
+* -s/--selection: selection commands (ex: resid 1:10)(default: all)(documentation: https://goo.gl/4t1mGb)
+* -t/--dihedral: dihedral type you want extracted (choices: ca, phi, psi)(default: ca)
 * -o/--ouput: output name (default: dihedral_angles.h5)
 
 2 . Find the optimal rc parameter (and Find the optimal number of cycles) using only a small subset
@@ -42,11 +42,9 @@ python optimize.py -d dihedral_angles.h5 --rc 0.27 --opt-cycle -i 100
 ```
 
 **Command line options**
-* -d/--h5: HDF5 file with dihedral angles
+* -d/--h5: HDF5 file with all the dihedral angles
 * --rc-range: Neighborhood Rc range values to test
 * --rc: Optimal neighborhood Rc value if you want to find the optimal number of cycles
-* --opt-cycle: Add it if you want to find the optimal number of cycles
-* --opt-rc: Add it if you want to find the optimal neighborhood value
 * --run: Number of SPE runs (default: 5)
 * -n/--ndim: Number of dimension (default: 2)
 * -t/--dihedral: Dihedral type you want to used (default: ca)
@@ -59,6 +57,20 @@ python optimize.py -d dihedral_angles.h5 --rc 0.27 --opt-cycle -i 100
 ```bash
 python spe.py -d dihedral_angles.h5 -c 10000 -r 0.27
 ```
+
+**Command line options**
+* -d/--h5: HDF5 file with all the dihedral angles
+* -c/--cycles: Number of optimization cycles
+* -r/--rc: Neighborhood rc value
+* -t/--dihedral: Dihedral type (choices: ca, phi, psi)(default: ca)
+* -n/--ndim: Number of dimension (default: 2)
+* --run: Number of SPE runs (default: 1)
+* --start: Use frames from this position (default: 0)
+* --stop: Use frames until this position (default: -1)
+* -i/--interval: Interval (default: 1)
+* -o/--output: Output directory (default: .)
+* -f/--frequency: SPE trajectory saving interval (0 if you don't want)(default: 0)
+* -s/--seed: Random seed, if you want to reproduce the SPE result
 
 ## Citation
 Soon ...
