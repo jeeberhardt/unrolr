@@ -31,6 +31,7 @@ python -c 'import pyopencl as cl; cl.create_some_context()'
 ```
 
 Example of output:
+
 Here I have only one platform (AMD) and 3 differents computing device (2 graphic cards and one CPU). 
 
 ```bash
