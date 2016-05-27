@@ -24,7 +24,7 @@ pip install pyopencl mdanalysis
 
 ## OpenCL context
 
-Before running the SPE algorithm, you have to define the OpenCL context. And it is a good way to see if everything is working correctly.
+Before running the SPE algorithm, you need to define the OpenCL context. And it is a good way to see if everything is working correctly.
 
 ```bash
 python -c 'import pyopencl as cl; cl.create_some_context()'
@@ -44,7 +44,7 @@ Choice, comma-separated [0]:1
 Set the environment variable PYOPENCL_CTX='0:1' to avoid being asked again.
 ```
 
-After selecting you device, you can set the environment variable,
+After selecting your device, you can set the environment variable,
 
 ```bash
 export PYOPENCL_CTX='0:1'
