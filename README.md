@@ -57,9 +57,9 @@ export PYOPENCL_CTX='0:1'
 python extract_dihedral_angles.py -t topology.psf -d traj.dcd
 ```
 **Command line options**
-* -t/--top: topology file (pdb, psf)
+* -p/--top: topology file (pdb, psf)
 * -d/--dcd: single trajectory or list of trajectories (dcd, xtc)
-* -s/--selection: selection commands (ex: resid 1:10)(default: all)(documentation: https://goo.gl/4t1mGb)
+* -s/--selection: selection command (ex: resid 1:10)(default: all)(documentation: https://goo.gl/4t1mGb)
 * -t/--dihedral: dihedral types you want to extract (choices: ca, phi, psi)(default: ca)
 * -o/--ouput: output name (default: dihedral_angles.h5)
 
