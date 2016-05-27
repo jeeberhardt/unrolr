@@ -28,7 +28,7 @@ pip install pyopencl mdanalysis
 ```bash
 python extract_dihedral_angles.py -t topology.psf -d traj_1.dcd
 ```
-
+** Arguments **
 * -t/--top: topology file (pdb, psf)
 * -d/--dcd: single trajectory or list of trajectory (dcd, xtc)
 * -s/--selection: selection commands (default: all)(https://pythonhosted.org/MDAnalysis/documentation_pages/selections.html)
