@@ -49,7 +49,7 @@ def parse_options():
                         default=[0.1, 0.5, 0.01],
                         help='range values to test for neighborhood rc')
     parser.add_argument('--rc', dest='rc',
-                        action='store', type=float, default= 0.3,
+                        action='store', type=float, default=0.3,
                         help='value for neighborhood rc (opt_cycle)')
     parser.add_argument('--opt-cycle', dest='opt_cycle',
                         action='store_true', default=False,
