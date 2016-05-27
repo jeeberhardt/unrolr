@@ -22,6 +22,34 @@ For the rest, you just have to do this,
 pip install pyopencl mdanalysis
 ```
 
+## OpenCL context
+
+Before running the SPE algorithm, you have to define the OpenCL context.
+
+```bash
+python -c 'import pyopencl as cl; cl.create_some_context()'
+```
+
+Example of output:
+
+```bash
+Choose platform:
+[0] <pyopencl.Platform 'AMD Accelerated Parallel Processing' at 0x7f97e96a8430>
+Choice [0]:0
+Choose device(s):
+[0] <pyopencl.Device 'Tahiti' on 'AMD Accelerated Parallel Processing' at 0x1e18a30>
+[1] <pyopencl.Device 'Tahiti' on 'AMD Accelerated Parallel Processing' at 0x254a110>
+[2] <pyopencl.Device 'Intel(R) Core(TM) i7-3820 CPU @ 3.60GHz' on 'AMD Accelerated Parallel Processing' at 0x21d0300>
+Choice, comma-separated [0]:1
+Set the environment variable PYOPENCL_CTX='0:1' to avoid being asked again.
+```
+
+And set the environment variable,
+
+```bash
+export PYOPENCL_CTX='0:1'
+```
+
 ## How-To
 
 1 . First you need to extract all the C-alpha dihedral angles from your trajectory
@@ -35,7 +63,7 @@ python extract_dihedral_angles.py -t topology.psf -d traj.dcd
 * -t/--dihedral: dihedral type you want extracted (choices: ca, phi, psi)(default: ca)
 * -o/--ouput: output name (default: dihedral_angles.h5)
 
-2 . Find the optimal rc parameter (and Find the optimal number of cycles) using only a small subset of conformations
+2 . Find the optimal rc parameter (and find the optimal number of cycles) using only a small subset of conformations
 ```bash
 python optimize.py -d dihedral_angles.h5 --rc-range 0.1 1.0 0.01 --opt-rc -i 100
 python optimize.py -d dihedral_angles.h5 --rc 0.27 --opt-cycle -i 100
