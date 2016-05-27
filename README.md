@@ -26,7 +26,7 @@ pip install pyopencl mdanalysis
 
 1 . First you need to extract all the C-alpha dihedral angles from your trajectory
 ```bash
-python extract_dihedral_angles.py -t topology.psf -d traj_1.dcd
+python extract_dihedral_angles.py -t topology.psf -d traj.dcd
 ```
 **Command line options**
 * -t/--top: topology file (pdb, psf)
@@ -43,15 +43,15 @@ python optimize.py -d dihedral_angles.h5 --rc 0.27 --opt-cycle -i 100
 
 **Command line options**
 * -d/--h5: HDF5 file with all the dihedral angles
-* --rc-range: Neighborhood Rc range values to test
-* --rc: Optimal neighborhood Rc value if you want to find the optimal number of cycles
-* --run: Number of SPE runs (default: 5)
-* -n/--ndim: Number of dimension (default: 2)
-* -t/--dihedral: Dihedral type you want to used (default: ca)
-* --start: Use frames from this position (default: 0)
-* --stop: Use frames until this position (default: -1)
-* -i/--interval: Interval (default: 1)
-* -o/--output: directory output (default: .)
+* --rc-range: neighborhood Rc range values to test
+* --rc: Optimal neighborhood Rc value (if you want to find the optimal number of cycles)
+* --run: number of SPE runs (default: 5)
+* -n/--ndim: number of dimension (default: 2)
+* -t/--dihedral: dihedral type you want to used (default: ca)
+* --start: starting frame (default: 0)
+* --stop: last frame (default: -1)
+* -i/--interval: interval (default: 1)
+* -o/--output: output directory (default: .)
 
 3 . Run SPE algorithm with all the conformations
 ```bash
@@ -60,17 +60,17 @@ python spe.py -d dihedral_angles.h5 -c 10000 -r 0.27
 
 **Command line options**
 * -d/--h5: HDF5 file with all the dihedral angles
-* -c/--cycles: Number of optimization cycles
-* -r/--rc: Neighborhood rc value
-* -t/--dihedral: Dihedral type (choices: ca, phi, psi)(default: ca)
-* -n/--ndim: Number of dimension (default: 2)
-* --run: Number of SPE runs (default: 1)
-* --start: Use frames from this position (default: 0)
-* --stop: Use frames until this position (default: -1)
-* -i/--interval: Interval (default: 1)
-* -o/--output: Output directory (default: .)
+* -c/--cycles: number of optimization cycles
+* -r/--rc: neighborhood rc value
+* -t/--dihedral: dihedral type (choices: ca, phi, psi)(default: ca)
+* -n/--ndim: number of dimension (default: 2)
+* --run: number of SPE runs (default: 1)
+* --start: starting frame (default: 0)
+* --stop: last frame (default: -1)
+* -i/--interval: interval (default: 1)
+* -o/--output: output directory (default: .)
 * -f/--frequency: SPE trajectory saving interval (0 if you don't want)(default: 0)
-* -s/--seed: Random seed, if you want to reproduce the SPE result (default: None)
+* -s/--seed: random seed (if you want to reproduce SPE results) (default: None)
 
 ## Citation
 Soon ...
