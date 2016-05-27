@@ -124,7 +124,7 @@ class SPE():
         Create a directory and run the SPE method
         """
         if not isinstance(dihedral_type, (list, tuple)):
-            dihedral_type = list(dihedral_type)
+            dihedral_type = dihedral_type.split()
 
         # Get all dihedral angles
         dihedrals = self.read_dihedral_angles_from_hdf5(h5filename, dihedral_type, start, stop, interval)
