@@ -47,13 +47,13 @@ python optimize.py -d dihedral_angles.h5 --rc 0.27 --opt-cycle -i 100
 * --rc: Optimal neighborhood Rc value if you want to find the optimal number of cycles
 * --opt-cycle: Add it if you want to find the optimal number of cycles
 * --opt-rc: Add it if you want to find the optimal neighborhood value
-* --run: Number of SPE runs
-* -n/--ndim: Number of dimension
-* -t/--dihedral: Dihedral type you want to used
-* --start: Use frames from this position
-* --stop: Use frames until this position
-* -i/--interval: Interval
-* -o/--output: directory output
+* --run: Number of SPE runs (default: 5)
+* -n/--ndim: Number of dimension (default: 2)
+* -t/--dihedral: Dihedral type you want to used (default: ca)
+* --start: Use frames from this position (default: 0)
+* --stop: Use frames until this position (default: -1)
+* -i/--interval: Interval (default: 1)
+* -o/--output: directory output (default: .)
 
 3 . Run SPE algorithm with all the conformations
 ```bash
