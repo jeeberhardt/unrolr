@@ -22,7 +22,7 @@ For the rest, you just have to do this,
 pip install pyopencl mdanalysis
 ```
 
-## Tutorial
+## How-To
 
 1 . First you need to extract all the C-alpha dihedral angles from your trajectory
 ```bash
@@ -70,7 +70,7 @@ python spe.py -d dihedral_angles.h5 -c 10000 -r 0.27
 * -i/--interval: Interval (default: 1)
 * -o/--output: Output directory (default: .)
 * -f/--frequency: SPE trajectory saving interval (0 if you don't want)(default: 0)
-* -s/--seed: Random seed, if you want to reproduce the SPE result
+* -s/--seed: Random seed, if you want to reproduce the SPE result (default: None)
 
 ## Citation
 Soon ...
