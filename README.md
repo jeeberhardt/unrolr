@@ -31,7 +31,7 @@ python extract_dihedral_angles.py -t topology.psf -d traj_1.dcd
 **Arguments**
 * -t/--top: topology file (pdb, psf)
 * -d/--dcd: single trajectory or list of trajectory (dcd, xtc)
-* -s/--selection: selection commands (default: all)(https://pythonhosted.org/MDAnalysis/documentation_pages/selections.html)
+* -s/--selection: selection commands (ex: resid 1:10)(default: all)(documentation:https://pythonhosted.org/MDAnalysis/documentation_pages/selections.html)
 * -t/--dihedral: dihedral type you want extracted (ca, phi or psi)(default: ca)
 * -o/--ouput: output name (default: dihedral_angles.h5)
 
