@@ -30,9 +30,7 @@ Before running the SPE algorithm, you have to define the OpenCL context. And it 
 python -c 'import pyopencl as cl; cl.create_some_context()'
 ```
 
-Example of output:
-
-Here I have only one platform (AMD) and 3 differents computing device (2 graphic cards and one CPU). 
+Here in my example, I have the choice between 3 differents computing device (2 graphic cards and one CPU). 
 
 ```bash
 Choose platform:
@@ -46,7 +44,7 @@ Choice, comma-separated [0]:1
 Set the environment variable PYOPENCL_CTX='0:1' to avoid being asked again.
 ```
 
-And set the environment variable,
+After selecting you device, you can set the environment variable,
 
 ```bash
 export PYOPENCL_CTX='0:1'
