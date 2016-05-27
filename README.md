@@ -35,9 +35,10 @@ python extract_dihedral_angles.py -t topology.psf -d traj_1.dcd
 * -t/--dihedral: dihedral type you want extracted (ca, phi or psi)(default: ca)
 * -o/--ouput: output name (default: dihedral_angles.h5)
 
-2 . Find the optimal rc parameter using only a small subset
+2 . Find the optimal rc parameter (and Find the optimal number of cycles) using only a small subset
 ```bash
 python optimize.py -d dihedral_angles.h5 --rc-range 0.1 1.0 0.01 --opt-rc -i 100
+python optimize.py -d dihedral_angles.h5 --rc 0.27 --opt-cycle -i 100
 ```
 
 **Command line options**
@@ -54,12 +55,7 @@ python optimize.py -d dihedral_angles.h5 --rc-range 0.1 1.0 0.01 --opt-rc -i 100
 * -i/--interval: Interval
 * -o/--output: directory output
 
-3 . Find the optimal number of cycles (not necessary)
-```bash
-python optimize.py -d dihedral_angles.h5 --rc 0.27 --opt-cycle -i 100
-```
-
-4 . Run SPE algorithm with all the conformations
+3 . Run SPE algorithm with all the conformations
 ```bash
 python spe.py -d dihedral_angles.h5 -c 10000 -r 0.27
 ```
