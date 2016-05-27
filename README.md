@@ -24,13 +24,14 @@ pip install pyopencl mdanalysis
 
 ## OpenCL context
 
-Before running the SPE algorithm, you have to define the OpenCL context.
+Before running the SPE algorithm, you have to define the OpenCL context. And it is a good way to see if everything is working correctly.
 
 ```bash
 python -c 'import pyopencl as cl; cl.create_some_context()'
 ```
 
 Example of output:
+Here I have only one platform (AMD) and 3 differents computing device (2 graphic cards and one CPU). 
 
 ```bash
 Choose platform:
