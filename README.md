@@ -44,7 +44,7 @@ Choice, comma-separated [0]:1
 Set the environment variable PYOPENCL_CTX='0:1' to avoid being asked again.
 ```
 
-After selecting your device, you can set the environment variable,
+Now you can set the environment variable.
 
 ```bash
 export PYOPENCL_CTX='0:1'
