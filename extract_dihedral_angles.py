@@ -110,7 +110,7 @@ def add_dihedral_angles_to_hdf5(h5filename, data, dataname):
 
 def parse_options():
     parser = argparse.ArgumentParser(description='Extract CA dihedral angles')
-    parser.add_argument('-t', '--top', dest='top_file', required = True, \
+    parser.add_argument('-p', '--top', dest='top_file', required = True, \
                         action='store', type=str, \
                         help = 'topology file used for simulation (pdb, psf)')
     parser.add_argument('-d', '--dcd', dest='dcd_files', required = True, \
