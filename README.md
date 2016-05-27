@@ -28,9 +28,9 @@ pip install pyopencl mdanalysis
 ```bash
 python extract_dihedral_angles.py -t topology.psf -d traj_1.dcd
 ```
-**Arguments**
+**Command line options**
 * -t/--top: topology file (pdb, psf)
-* -d/--dcd: single trajectory or list of trajectory (dcd, xtc)
+* -d/--dcd: single trajectory or list of trajectories (dcd, xtc)
 * -s/--selection: selection commands (ex: resid 1:10)(default: all)(documentation:https://goo.gl/4t1mGb)
 * -t/--dihedral: dihedral type you want extracted (ca, phi or psi)(default: ca)
 * -o/--ouput: output name (default: dihedral_angles.h5)
@@ -39,6 +39,20 @@ python extract_dihedral_angles.py -t topology.psf -d traj_1.dcd
 ```bash
 python optimize.py -d dihedral_angles.h5 --rc-range 0.1 1.0 0.01 --opt-rc -i 100
 ```
+
+**Command line options**
+* -d/--h5: HDF5 file with dihedral angles
+* --rc-range: Neighborhood Rc range values to test
+* --rc: Optimal neighborhood Rc value if you want to find the optimal number of cycles
+* --opt-cycle: Add it if you want to find the optimal number of cycles
+* --opt-rc: Add it if you want to find the optimal neighborhood value
+* --run: Number of SPE runs
+* -n/--ndim: Number of dimension
+* -t/--dihedral: Dihedral type you want to used
+* --start: Use frames from this position
+* --stop: Use frames until this position
+* -i/--interval: Interval
+* -o/--output: directory output
 
 3 . Find the optimal number of cycles (not necessary)
 ```bash
