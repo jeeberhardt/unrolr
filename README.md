@@ -27,13 +27,17 @@ pip install pyopencl mdanalysis
 python extract_dihedral_angles.py -t topology.psf -d traj_1.dcd
 ```
 
-2 . Find the optimal rc parameter (and/or the optimal number of cycles) with a small subset
+2 . Find the optimal rc parameter using only a small subset
 ```bash
 python optimize.py -d dihedral_angles.h5 --rc-range 0.1 1.0 0.01 --opt-rc -i 100
+```
+
+3 . Find the optimal number of cycles (not necessary)
+```bash
 python optimize.py -d dihedral_angles.h5 --rc 0.27 --opt-cycle -i 100
 ```
 
-3 . Run SPE algorithm with all the conformations
+4 . Run SPE algorithm with all the conformations
 ```bash
 python spe.py -d dihedral_angles.h5 -c 10000 -r 0.27
 ```
