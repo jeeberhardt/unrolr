@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+""" Help to find the optimal neighbourhood radius rc and minimal number of cycle """
+
 from __future__ import print_function
 
 import os
@@ -11,6 +14,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from spe import SPE
+
+__author__ = "Jérôme Eberhardt, Roland H Stote, and Annick Dejaegere"
+__copyright__ = "Copyright 2016, Jérôme Eberhardt"
+__credits__ = ["Jérôme Eberhardt", "Roland H Stote", "Annick Dejaegere"]
+
+__lience__ = "MIT"
+__maintainer__ = "Jérôme Eberhardt"
+__email__ = "qksoneo@gmail.com"
 
 #pd.set_option('display.max_rows', None)
 

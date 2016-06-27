@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+""" Core of the pSPE method using dihedral distance as metric """
+
 from __future__ import print_function
 
 import os
@@ -8,6 +11,14 @@ import h5py
 import argparse
 import numpy as np
 import pyopencl as cl
+
+__author__ = "Jérôme Eberhardt, Roland H Stote, and Annick Dejaegere"
+__copyright__ = "Copyright 2016, Jérôme Eberhardt"
+__credits__ = ["Jérôme Eberhardt", "Roland H Stote", "Annick Dejaegere"]
+
+__lience__ = "MIT"
+__maintainer__ = "Jérôme Eberhardt"
+__email__ = "qksoneo@gmail.com"
 
 """
 export PYOPENCL_NO_CACHE=1

@@ -1,14 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+""" Extract all the dihedral angle from MD trajectory """
+
 from __future__ import print_function
 
 import h5py
 import argparse
 import numpy as np
-
 from itertools import groupby
 from operator import itemgetter
 from MDAnalysis import Universe, collection, Timeseries
+
+__author__ = "Jérôme Eberhardt, Roland H Stote, and Annick Dejaegere"
+__copyright__ = "Copyright 2016, Jérôme Eberhardt"
+__credits__ = ["Jérôme Eberhardt", "Roland H Stote", "Annick Dejaegere"]
+
+__lience__ = "MIT"
+__maintainer__ = "Jérôme Eberhardt"
+__email__ = "qksoneo@gmail.com"
 
 def identify_groups_of_continuous_numbers(data):
     groups = []
