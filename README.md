@@ -13,11 +13,13 @@ You need, at a minimum:
 * PyOpenCL
 * MDAnalysis
 
-## Installation
+## Installation on UNIX
 
 I highly recommand you to install the Anaconda distribution (https://www.continuum.io/downloads) if you want a clean python environnment with nearly all the prerequisites already installed (NumPy, H5py, Pandas, Matplotlib).
 
-For the rest, you just have to do this,
+1 . First, you have to install OpenCL. Good news for MacOS users, you don't have to install OpenCL, it works out-of-the-box, so you can skip this part and just install pyopencl and MDAanalysis. For others, from all the tutorials you can find on the internet, this one it is still the more succinct one that I found: [OpenCL installation](https://ethereum.gitbooks.io/frontier-guide/content/gpu.html).
+
+2 . For the rest, you just have to do this,
 ```bash
 pip install pyopencl mdanalysis
 ```
