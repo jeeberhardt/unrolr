@@ -32,7 +32,7 @@ def identify_groups_of_continuous_numbers(data):
 def extract_dihedral_angles_from_trajectory(top_file, dcd_files, dihedral_type, selection, output):
 
     if os.path.isfile(output):
-        print 'Error: HDF5 dihedral angles file already exists!'
+        print('Error: HDF5 dihedral angles file already exists!')
         sys.exit(1)
 
     for dcd in dcd_files:
