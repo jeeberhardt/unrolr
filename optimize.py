@@ -138,7 +138,7 @@ def main():
 
         current_rc = rc[0]
 
-        while current_rc < (rc[1] + rc[2]):
+        while current_rc < rc[1]:
 
             print('# Run with rc = %4f' % current_rc)
 
