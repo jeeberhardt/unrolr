@@ -135,11 +135,13 @@ def main():
             current_rc += rc_range[2]
 
         # Plot result
-        plot_result(df_rc, 'rc', r"Neighborhood $r_{c}$", 
-                    "%s/spe_optimization/rc_vs_stress-correlation.png" % output)
+        rc_str = '%s_%s_%s' % (rc_range[0], rc_range[1], rc_range[2])
+        fig_name = "%s/spe_optimization/rc_vs_stress-correlation_%s.png" % (output, rc_str)
+        plot_result(df_rc, 'rc', r"Neighborhood $r_{c}$", fig_name)
+        
         # Write result to csv file
-        df_rc.to_csv('%s/spe_optimization/rc_vs_stress-correlation.csv' % output, 
-                     index=False)
+        file_name = '%s/spe_optimization/rc_vs_stress-correlation_%s.csv' % rc_str
+        df_rc.to_csv(file_name, index=False)
 
     # Now we test the influence of the number of cycle on the stress and the correlation
     if opt_cycle:
