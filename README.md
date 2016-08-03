@@ -63,16 +63,15 @@ python extract_dihedral_angles.py -t topology.psf -d traj.dcd
 * -t/--dihedral: dihedral types you want to extract (choices: ca, phi, psi)(default: ca)
 * -o/--ouput: output name (default: dihedral_angles.h5)
 
-2 . Find the optimal rc parameter (and find the optimal number of cycles) using only a small subset of conformations
+2 . Find the optimal rc parameter (or find the optimal number of cycles) using only a small subset of conformations. 
 ```bash
-python optimize.py -d dihedral_angles.h5 --rc-range 0.1 1.0 0.01 --opt-rc -i 100
-python optimize.py -d dihedral_angles.h5 --rc 0.27 --opt-cycle -i 100
+python optimize.py -d dihedral_angles.h5 --rc 0.1 1.0 0.01 -i 100 # if you want to find the optimal RC value
+python optimize.py -d dihedral_angles.h5 --rc 0.27 -i 100 # if you want to find the optimal cycle value
 ```
 
 **Command line options**
 * -d/--h5: HDF5 file with all the dihedral angles
-* --rc-range: neighborhood Rc range values to test
-* --rc: optimal neighborhood Rc value (if you want to find the optimal number of cycles)
+* --rc: neighborhood RC value (opt cycle) or RC range (0.1 1 0.1)(opt rc)
 * --run: number of SPE runs (default: 5)
 * -n/--ndim: number of dimension (default: 2)
 * -t/--dihedral: dihedral types you want to use (choices: ca, phi, psi)(default: ca)
