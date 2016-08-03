@@ -55,19 +55,10 @@ def parse_options():
     parser.add_argument('-d', '--h5', dest='hdf5filename', required = True,
                         action='store', type=str,
                         help='HDF5 file with dihedral angles')
-    parser.add_argument('--rc-range', dest='rc_range',
-                        action='store', type=float, nargs=3, 
-                        default=[0.1, 0.5, 0.01],
-                        help='range values to test for neighborhood rc')
     parser.add_argument('--rc', dest='rc',
-                        action='store', type=float, default=0.3,
-                        help='value for neighborhood rc (opt_cycle)')
-    parser.add_argument('--opt-cycle', dest='opt_cycle',
-                        action='store_true', default=False,
-                        help='test multiple value of cycles for a giving rc')
-    parser.add_argument('--opt-rc', dest='opt_rc',
-                        action='store_true', default=False,
-                        help='test multiple value of neighborhood rc')
+                        action='store', type=float, nargs='+', 
+                        default=None,
+                        help='rc value or rc range [0.1 1 0.1]')
     parser.add_argument('--run', dest='runs',
                         action='store', type=int, default=5,
                         help='number of spe runs')
@@ -97,10 +88,7 @@ def main():
     options = parse_options()
 
     hdf5filename = options.hdf5filename
-    rc_range = options.rc_range
     rc = options.rc
-    opt_cycle = options.opt_cycle
-    opt_rc = options.opt_rc
     ndim = options.ndim
     start = options.start
     stop = options.stop
@@ -109,42 +97,10 @@ def main():
     runs = options.runs
     dihedral_type = options.dihedral_type
 
-    # We test the influence of the neighborhood rc on the stress and the correlation
-    if opt_rc:
-
-        df_rc = pd.DataFrame(np.nan, index =[0], 
-                             columns=['run', 'rc', 'stress', 'correlation'])
-        idx = 0
-
-        current_rc = rc_range[0]
-
-        while current_rc < (rc_range[1] + rc_range[2]):
-
-            print('# Run with rc = %4f' % current_rc)
-
-            for i in xrange(runs):
-
-                spe = SPE(5000, current_rc, ndim)
-                spe.fit(hdf5filename, dihedral_type, start, stop, interval, 
-                        '%s/spe_optimization' % output, 0)
-
-                df_rc.loc[idx] = [i+1, current_rc, spe.stress, spe.correlation]
-
-                idx += 1
-
-            current_rc += rc_range[2]
-
-        # Plot result
-        rc_str = '%s_%s_%s' % (rc_range[0], rc_range[1], rc_range[2])
-        fig_name = "%s/spe_optimization/rc_vs_stress-correlation_%s.png" % (output, rc_str)
-        plot_result(df_rc, 'rc', r"Neighborhood $r_{c}$", fig_name)
-
-        # Write result to csv file
-        file_name = '%s/spe_optimization/rc_vs_stress-correlation_%s.csv' % (output, rc_str)
-        df_rc.to_csv(file_name, index=False)
-
-    # Now we test the influence of the number of cycle on the stress and the correlation
-    if opt_cycle:
+    # If there is only one value, it means we want to test multiple values of cycle
+    if len(rc) == 1:
+        # Get rc value
+        rc = rc[0]
 
         columns = ['run', 'rc', 'cycle', 'stress', 'correlation']
         df_cycle = pd.DataFrame(np.nan, index=[0], columns=columns)
@@ -173,6 +129,43 @@ def main():
         # Write result to csv file
         f_name = '%s/spe_optimization/cycle_vs_stress-correlation.csv' % output
         df_cycle.to_csv(f_name, index=False)
+
+    # If there is 3 values, it means we have to test multiple values of rc
+    elif len(rc) == 3:
+
+        df_rc = pd.DataFrame(np.nan, index =[0], columns=['run', 'rc', 'stress', 'correlation'])
+        idx = 0
+
+        current_rc = rc[0]
+
+        while current_rc < (rc[1] + rc[2]):
+
+            print('# Run with rc = %4f' % current_rc)
+
+            for i in xrange(runs):
+
+                spe = SPE(5000, current_rc, ndim)
+                spe.fit(hdf5filename, dihedral_type, start, stop, interval, 
+                        '%s/spe_optimization' % output, 0)
+
+                df_rc.loc[idx] = [i+1, current_rc, spe.stress, spe.correlation]
+
+                idx += 1
+
+            current_rc += rc[2]
+
+        # Plot result
+        rc_str = '%s_%s_%s' % (rc[0], rc[1], rc[2])
+        fig_name = "%s/spe_optimization/rc_vs_stress-correlation_%s.png" % (output, rc_str)
+        plot_result(df_rc, 'rc', r"Neighborhood $r_{c}$", fig_name)
+
+        # Write result to csv file
+        file_name = '%s/spe_optimization/rc_vs_stress-correlation_%s.csv' % (output, rc_str)
+        df_rc.to_csv(file_name, index=False)
+
+    else:
+        print('Error: You need to specify at least a RC value (0.1) or a range of RC values (0.1 1 0.1)!')
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
