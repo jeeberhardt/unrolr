@@ -123,11 +123,11 @@ def main():
                 idx += 1
 
         # Plot result
-        f_name = "%s/spe_optimization/cycle_vs_stress-correlation.png" % output
+        f_name = "%s/spe_optimization/cycle_vs_stress-correlation_i_%s.png" % (output, interval)
         plot_result(df_cycle, 'cycle', 'Cycles', f_name, True)
 
         # Write result to csv file
-        f_name = '%s/spe_optimization/cycle_vs_stress-correlation.csv' % output
+        f_name = '%s/spe_optimization/cycle_vs_stress-correlation_i_%s.csv' % (output, interval)
         df_cycle.to_csv(f_name, index=False)
 
     # If there is 3 values, it means we have to test multiple values of rc
