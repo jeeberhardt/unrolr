@@ -87,7 +87,7 @@ def parse_options():
 def main():
     options = parse_options()
 
-    hdf5filename = options.hdf5filename
+    dihe_file = options.hdf5filename
     rc = options.rc
     ndim = options.ndim
     start = options.start
@@ -95,7 +95,9 @@ def main():
     interval = options.interval
     output = options.output
     runs = options.runs
-    dihedral_type = options.dihedral_type
+    dihe_type = options.dihedral_type
+
+    S = SPE(dihe_file, dihe_type, start, stop, interval)
 
     # If there is only one value, it means we want to test multiple values of cycle
     if len(rc) == 1:
@@ -114,11 +116,10 @@ def main():
 
             for i in xrange(runs):
 
-                spe = SPE(cycle, rc, ndim)
-                spe.fit(hdf5filename, dihedral_type, start, stop, interval, 
-                        '%s/spe_optimization' % output, 0)
+                S.fit(rc, cycles, ndim)
+                S.save('%s/spe_optimization' % output)
 
-                df_cycle.loc[idx] = [i+1, rc, cycle, spe.stress, spe.correlation]
+                df_cycle.loc[idx] = [i+1, rc, cycle, S.stress, S.correlation]
 
                 idx += 1
 
@@ -144,11 +145,10 @@ def main():
 
             for i in xrange(runs):
 
-                spe = SPE(5000, current_rc, ndim)
-                spe.fit(hdf5filename, dihedral_type, start, stop, interval, 
-                        '%s/spe_optimization' % output, 0)
+                S.fit(current_rc, 5000, ndim)
+                S.save('%s/spe_optimization' % output)
 
-                df_rc.loc[idx] = [i+1, current_rc, spe.stress, spe.correlation]
+                df_rc.loc[idx] = [i+1, current_rc, S.stress, S.correlation]
 
                 idx += 1
 
