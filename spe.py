@@ -27,7 +27,7 @@ export PYOPENCL_CTX='0:1'
 
 class SPE():
 
-    def __init__(self, cycles, rc, ndim, random_seed=0):
+    def __init__(self, dihe_file, dihe_type='ca', start=0, stop=-1, interval=1):
 
         # Check PYOPENCL_CTX environnment variable
         if not self.check_environnment_variable('PYOPENCL_CTX'):
@@ -35,16 +35,18 @@ class SPE():
             print('Tip: python -c \'import pyopencl as cl; cl.create_some_context()\'')
             sys.exit(1)
 
-        # Set numpy random state
-        self.random_seed = self.set_random_state(random_seed)
+        if not isinstance(dihe_type, (list, tuple)):
+            dihe_type = dihe_type.split()
 
-        # Set all the SPE variables
-        self.cycles = cycles
-        self.rc = rc
-        self.ndim = ndim
-        self.configuration = None
-        self.stress = None
-        self.correlation = None
+        # Get all dihedral angles
+        self.dihedral = self.read_dihedral_angles_from_hdf5(dihe_file, dihe_type, start, stop, interval)
+
+        # Generate frame idx from start, stop and interval
+        if stop == -1:
+            stop = self.get_total_number_of_frames(dihe_file, dihe_type)
+
+        self.frames = np.arange(start, stop, interval)
+        self.dihe_type = dihe_type
 
     def check_environnment_variable(self, variable):
         """
@@ -55,9 +57,9 @@ class SPE():
         else:
             return False
 
-    def set_random_state(self, seed=0):
+    def set_random_state(self, seed=None):
         # Set Random state (seed)
-        if seed == 0:
+        if not seed:
             seed = np.random.randint(low=1, high=999999, size=1)[0]
 
         np.random.seed(seed = seed)
@@ -71,7 +73,7 @@ class SPE():
         with h5py.File(h5filename, 'r') as r:
             return r[dataname][:]
 
-    def read_dihedral_angles_from_hdf5(self, h5filename, datanames, start, stop, interval):
+    def read_dihedral_angles_from_hdf5(self, h5filename, datanames, start=0, stop=-1, interval=1):
         """
         Read dihedral angles from HDF5 with a certain interval, start and stop
         """
@@ -104,75 +106,14 @@ class SPE():
         with h5py.File(h5filename) as f:
             return f[datanames[0]].shape[0]
 
-    def backup_directory(self, dir_name):
-        """
-        Backup the old directory
-        """
-        if os.path.isdir(dir_name):
-            count = 1
-            exist = True
-            
-            while exist:
-                if os.path.isdir(dir_name + '#%d' % (count)):
-                    count += 1
-                else:
-                    os.rename(dir_name, dir_name + '#%d' % (count))
-                    exist = False
-        else:
-            pass
-
-    def create_new_directory(self, dir_name):
-        """
-        Create a new directory and backup the old one if necessary
-        """
-        if os.path.exists(dir_name):
-            self.backup_directory(dir_name)
-
-        os.makedirs(dir_name)
-
-    def fit(self, h5filename, dihedral_type, start=0, stop=-1, interval=-1, dir_output='.', save_frequency=10):
-        """
-        Create a directory and run the SPE method
-        """
-        if not isinstance(dihedral_type, (list, tuple)):
-            dihedral_type = dihedral_type.split()
-
-        # Get all dihedral angles
-        dihedrals = self.read_dihedral_angles_from_hdf5(h5filename, dihedral_type, start, stop, interval)
-
-        # Create directory and backup old directory
-        dir_name = 'spe_%s_%s_c_%s_rc_%s_d_%s' % (dihedrals.shape[0], '_'.join(dihedral_type), 
-                                                  self.cycles, self.rc, self.ndim)
-        self.create_new_directory('%s/%s' % (dir_output, dir_name))
-
-        # Fire off SPE calculation !!
-        traj_name = '%s/%s/trajectory.h5' % (dir_output, dir_name)
-        self.spe(dihedrals, self.cycles, self.rc, self.ndim, traj_name, save_frequency)
-
-        # Evaluation embedding
-        self.evaluate_embedding(dihedrals, self.configuration, self.rc)
-
-        # We add the frame idx to the configuration
-        if stop == -1:
-            stop = self.get_total_number_of_frames(h5filename, dihedral_type)
-
-        frames = np.arange(start, stop, interval)
-        data = np.column_stack((frames, self.configuration.T))
-
-        # Save final configuration to txt file
-        txt_name = '%s/%s/configuration.txt' % (dir_output, dir_name)
-        header = 'seed %s cycle %s rc %s stress %s corr %s'
-        fmt = '%010d' + (self.ndim * '%10.5f')
-        np.savetxt(txt_name, data, fmt=fmt, header=header % (self.random_seed, 
-                   self.cycles, self.rc, self.stress, self.correlation))
-
-    def spe(self, dihedrals, cycles, rc, ndim, output, frequency):
+    def spe(self, rc, cycles=10000, ndim=2, frequency=0):
         """
         The SPE method itself !
         """
         learning_rate = 1.0
-        #dc = 1.0
         alpha = float(learning_rate - 0.01) / float(cycles)
+        dihedral = self.dihedral
+        output = 'spe_trajectory.h5'
 
         # Create context and queue
         ctx = cl.create_some_context()
@@ -243,24 +184,26 @@ class SPE():
         """).build()
 
         # Send dihedral angles to CPU/GPU
-        dihe_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=dihedrals)
+        dihe_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=dihedral)
 
         # Allocate space on CPU/GPU to store rij and dij
-        tmp = np.zeros((dihedrals.shape[0],), dtype=np.float32)
+        tmp = np.zeros((dihedral.shape[0],), dtype=np.float32)
         rij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, tmp.nbytes)
         dij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, tmp.nbytes)
 
         # Generate initial (random)
-        d = np.float32(np.random.rand(ndim, dihedrals.shape[0]))
+        d = np.float32(np.random.rand(ndim, dihedral.shape[0]))
         # Send initial (random) configuration to the CPU/GPU
         d_buf = cl.Buffer(ctx, cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR, hostbuf=d)
 
+        """
         # If frequency superior at 0, we open a HDF5
         if frequency > 0:
             # Open HDF5 file
             f = h5py.File(output)
             # Store initial (random) configuration to HDF5
             store_data_to_hdf5(output, d.T, 'trajectory/frame_%010d' % 0)
+        """
 
         freq_progression = cycles / 100.
 
@@ -272,11 +215,11 @@ class SPE():
                 sys.stdout.flush()
 
             # Choose random configuration (pivot)
-            x = np.int32(np.random.randint(dihedrals.shape[0]))
+            x = np.int32(np.random.randint(dihedral.shape[0]))
 
             # Compute dihedral distances
-            program.dihedral_distances(queue, (dihedrals.shape[0],), None, dihe_buf, rij_buf, 
-                                       x, np.int32(dihedrals.shape[1])).wait()
+            program.dihedral_distances(queue, (dihedral.shape[0],), None, dihe_buf, rij_buf, 
+                                       x, np.int32(dihedral.shape[1])).wait()
             # Compute euclidean distances
             program.euclidean_distances(queue, (d.shape[1],), None, d_buf, dij_buf, x, 
                                         np.int32(d.shape[1]), np.int32(d.shape[0])).wait()
@@ -284,22 +227,21 @@ class SPE():
             program.spe(queue, d.shape, None, rij_buf, dij_buf, d_buf, x, np.int32(d.shape[1]), 
                         np.float32(rc), np.float32(learning_rate)).wait()
 
-            # Trustworthy Stochastic Proximity Embbeding
-            #program.tspe(queue, d.shape, None, rij_buf, dij_buf, d_buf, x, np.int32(d.shape[1]), 
-            #            np.float32(dc), np.float32(learning_rate)).wait()
-
             learning_rate -= alpha
-            #dc -= alpha
 
+            """
             if (frequency > 0) and (i % frequency == 0) and (i > 0):
                 # Get the current configuration
                 cl.enqueue_copy(queue, d, d_buf)
                 # Store current configuration to HDF5 file
                 store_data_to_hdf5(output, d.T, 'trajectory/frame_%010d' % i)
+            """
 
+        """
         # At the end, we close the HDF5 file
         if frequency > 0:
             f.close()
+        """
 
         # Get the last configuration d
         cl.enqueue_copy(queue, d, d_buf)
@@ -308,10 +250,14 @@ class SPE():
 
         self.configuration = d
 
-    def evaluate_embedding(self, dihedrals, configuration, rc, epsilon = 1e-5):
+    def evaluate_embedding(self, rc, epsilon=1e-5):
         """
-        Evaluate the final configuration
+        Dirty function to evaluate the final configuration
         """
+        # Shortcut
+        configuration = self.configuration
+        dihedral = self.dihedral
+
         # Creation du contexte et de la queue
         ctx = cl.create_some_context()
         queue = cl.CommandQueue(ctx)
@@ -362,15 +308,15 @@ class SPE():
 
         # Send dihedral angles and configuration on CPU/GPU
         config_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=configuration)
-        dihe_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=dihedrals)
+        dihe_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=dihedral)
 
         # Allocate memory
-        rij = np.zeros((dihedrals.shape[0],), dtype=np.float32)
-        dij = np.zeros((dihedrals.shape[0],), dtype=np.float32)
+        rij = np.zeros((dihedral.shape[0],), dtype=np.float32)
+        dij = np.zeros((dihedral.shape[0],), dtype=np.float32)
         rij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, rij.nbytes)
         dij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, dij.nbytes)
 
-        sij = np.zeros((dihedrals.shape[0],), dtype=np.float32)
+        sij = np.zeros((dihedral.shape[0],), dtype=np.float32)
         sij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, sij.nbytes)
 
         tmp_correl = []
@@ -383,17 +329,17 @@ class SPE():
         while True:
 
             # Choose random conformation as pivot
-            x = np.int32(np.random.randint(dihedrals.shape[0]))
+            x = np.int32(np.random.randint(dihedral.shape[0]))
 
             # Dihedral distances
-            program.dihedral_distances(queue, (dihedrals.shape[0],), None, dihe_buf, rij_buf, 
-                                       x, np.int32(dihedrals.shape[1])).wait()
+            program.dihedral_distances(queue, (dihedral.shape[0],), None, dihe_buf, rij_buf, 
+                                       x, np.int32(dihedral.shape[1])).wait()
             # Euclidean distances
             program.euclidean_distances(queue, (configuration.shape[1],), None, config_buf, 
                                         dij_buf, x, np.int32(configuration.shape[1]), 
                                         np.int32(configuration.shape[0])).wait()
             # Compute part of stress
-            program.stress(queue, (dihedrals.shape[0],), None, rij_buf, dij_buf, sij_buf, 
+            program.stress(queue, (dihedral.shape[0],), None, rij_buf, dij_buf, sij_buf, 
                            np.float32(rc)).wait()
 
             # Get rij, dij and sij
@@ -420,6 +366,70 @@ class SPE():
             else:
                 old_stress = stress
                 old_correl = correl
+
+    def fit(self, rc, cycles=10000, ndim=2, frequency=0, random_seed=None):
+        """
+        Run the SPE method
+        """
+        # Save some variables
+        self.rc = rc
+        self.cycles = cycles
+        self.ndim = ndim
+
+        # Set numpy random state
+        self.random_seed = self.set_random_state(random_seed)
+
+        # Fire off SPE calculation !!
+        self.spe(rc, cycles, ndim, frequency)
+        # Evaluation embedding
+        self.evaluate_embedding(rc, epsilon=1e-5)
+
+        # Add frame idx to configuration
+        self.configuration = np.column_stack((self.frames, self.configuration.T))
+
+    def backup_directory(self, dir_name):
+        """
+        Backup the old directory
+        """
+        if os.path.isdir(dir_name):
+            count = 1
+            exist = True
+            
+            while exist:
+                if os.path.isdir(dir_name + '#%d' % (count)):
+                    count += 1
+                else:
+                    os.rename(dir_name, dir_name + '#%d' % (count))
+                    exist = False
+        else:
+            pass
+
+    def create_new_directory(self, dir_name):
+        """
+        Create a new directory and backup the old one if necessary
+        """
+        if os.path.exists(dir_name):
+            self.backup_directory(dir_name)
+
+        os.makedirs(dir_name)
+
+    def save(self, dir_output='.'):
+        """
+        Save all the data
+        """
+        # Create directory and backup old directory
+        dir_str = 'spe_%s_%s_c_%s_rc_%s_d_%s'
+        dir_name = dir_str % (self.dihedral.shape[0], '_'.join(self.dihe_type), 
+                              self.cycles, self.rc, self.ndim)
+        self.create_new_directory('%s/%s' % (dir_output, dir_name))
+
+        # Save final configuration to txt file
+        txt_name = '%s/%s/configuration.txt' % (dir_output, dir_name)
+        header = 'seed %s cycle %s rc %s stress %s corr %s'
+        fmt = '%010d' + (self.ndim * '%10.5f')
+        np.savetxt(txt_name, self.configuration, fmt=fmt, header=header % (self.random_seed, 
+                   self.cycles, self.rc, self.stress, self.correlation))
+
 
 def parse_options():
     parser = argparse.ArgumentParser(description='SPE python script')
@@ -458,7 +468,7 @@ def parse_options():
                         action='store', type=int, default=0,
                         help='trajectory saving interval (0 if you don\'t want)')
     parser.add_argument('-s' '--seed', dest='random_seed',
-                        action='store', type=int, default=0,
+                        action='store', type=int, default=None,
                         help='If you want to reproduce spe trajectory')
 
     return parser.parse_args()
@@ -467,27 +477,29 @@ def main():
 
     options = parse_options()
 
-    hdf5filename = options.hdf5filename
+    dihe_file = options.hdf5filename
+    cycles = options.cycles
+    rc = options.rc
+    ndim = options.ndim
+    runs = options.runs
     start = options.start
     stop = options.stop
     interval = options.interval
-    ndim = options.ndim
-    runs = options.runs
-    cycles = options.cycles
-    rc = options.rc
     output = options.output
     frequency = options.frequency
     random_seed = options.random_seed
-    dihedral_type = options.dihedral_type
+    dihe_type = options.dihedral_type
+
+    S = SPE(dihe_file, dihe_type, start, stop, interval)
 
     for i in xrange(runs):
 
-        spe = SPE(cycles, rc, ndim, random_seed)
-        print("Random seed              : %8d" % spe.random_seed)
+        S.fit(rc, cycles, ndim, frequency, random_seed)
+        print("Random seed              : %8d" % S.random_seed)
+        print("Stress                   : %8.3f" % S.stress)
+        print("Correlation              : %8.3f" % S.correlation)
 
-        spe.fit(hdf5filename, dihedral_type, start, stop, interval, output, frequency)
-
-        print(spe.stress, spe.correlation)
+        S.save(output)
 
 if __name__ == '__main__':
     main()
