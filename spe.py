@@ -113,7 +113,7 @@ class SPE():
         learning_rate = 1.0
         alpha = float(learning_rate - 0.01) / float(cycles)
         dihedral = self.dihedral
-        output = 'spe_trajectory.h5'
+        #output = 'spe_trajectory.h5'
 
         # Create context and queue
         ctx = cl.create_some_context()
@@ -430,7 +430,6 @@ class SPE():
         np.savetxt(txt_name, self.configuration, fmt=fmt, header=header % (self.random_seed, 
                    self.cycles, self.rc, self.stress, self.correlation))
 
-
 def parse_options():
     parser = argparse.ArgumentParser(description='SPE python script')
     parser.add_argument('-d', '--h5', dest='hdf5filename', required=True,
@@ -461,13 +460,13 @@ def parse_options():
     parser.add_argument('-i', '--interval', dest='interval',
                         action='store', type=int, default=1,
                         help='used frames at this interval')
-    parser.add_argument('-o' '--output', dest='output',
+    parser.add_argument('-o', '--output', dest='output',
                         action='store', type=str, default='.',
                         help='directory output')
-    parser.add_argument('-f' '--frequency', dest='frequency',
+    parser.add_argument('-f', '--frequency', dest='frequency',
                         action='store', type=int, default=0,
                         help='trajectory saving interval (0 if you don\'t want)')
-    parser.add_argument('-s' '--seed', dest='random_seed',
+    parser.add_argument('-s', '--seed', dest='random_seed',
                         action='store', type=int, default=None,
                         help='If you want to reproduce spe trajectory')
 
