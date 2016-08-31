@@ -137,22 +137,17 @@ def main():
         df_rc = pd.DataFrame(np.nan, index =[0], columns=['run', 'rc', 'stress', 'correlation'])
         idx = 0
 
-        current_rc = rc[0]
-
-        while current_rc < rc[1]:
-
-            print('# Run with rc = %4f' % current_rc)
+        for rc in np.arange(rc[0], rc[1]+rc[2], rc[2]):
+            print('# Run with rc = %4f' % rc)
 
             for i in xrange(runs):
 
-                S.fit(current_rc, 5000, ndim)
+                S.fit(rc, 5000, ndim)
                 S.save('%s/spe_optimization' % output)
 
-                df_rc.loc[idx] = [i+1, current_rc, S.stress, S.correlation]
+                df_rc.loc[idx] = [i+1, rc, S.stress, S.correlation]
 
                 idx += 1
-
-            current_rc += rc[2]
 
         # Plot result
         rc_str = '%s_%s_%s' % (rc[0], rc[1], rc[2])
