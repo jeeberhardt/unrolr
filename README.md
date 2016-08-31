@@ -111,7 +111,7 @@ python spe.py -d dihedral_angles.h5 -c 10000 -r 0.27
 
 **Outputs**
 * configuration file (optimized coordinates)
-* HDF5 file with spe trajectory (if selected)
+* ~~HDF5 file with spe trajectory (if selected)~~
 
 ## Citation
 Soon ...
