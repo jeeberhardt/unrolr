@@ -116,7 +116,7 @@ def main():
 
             for i in xrange(runs):
 
-                S.fit(rc, cycles, ndim)
+                S.fit(rc, cycle, ndim)
                 S.save('%s/spe_optimization' % output)
 
                 df_cycle.loc[idx] = [i+1, rc, cycle, S.stress, S.correlation]
@@ -137,20 +137,20 @@ def main():
         df_rc = pd.DataFrame(np.nan, index =[0], columns=['run', 'rc', 'stress', 'correlation'])
         idx = 0
 
-        for rc in np.arange(rc[0], rc[1]+rc[2], rc[2]):
-            print('# Run with rc = %4f' % rc)
+        for r in np.arange(rc[0], rc[1]+rc[2], rc[2]):
+            print('# Run with rc = %4f' % r)
 
             for i in xrange(runs):
 
-                S.fit(rc, 5000, ndim)
+                S.fit(r, 5000, ndim)
                 S.save('%s/spe_optimization' % output)
 
-                df_rc.loc[idx] = [i+1, rc, S.stress, S.correlation]
+                df_rc.loc[idx] = [i+1, r, S.stress, S.correlation]
 
                 idx += 1
 
         # Plot result
-        rc_str = '%s_%s_%s' % (rc[0], rc[1], rc[2])
+        rc_str = '%s_%s_%s_i_%s' % (rc[0], rc[1], rc[2], interval)
         fig_name = "%s/spe_optimization/rc_vs_stress-correlation_%s.png" % (output, rc_str)
         plot_result(df_rc, 'rc', r"Neighborhood $r_{c}$", fig_name)
 
