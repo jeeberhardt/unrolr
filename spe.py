@@ -165,22 +165,6 @@ class SPE():
                     d[index] = d[index] + (learning_rate * ((rij[j]-dij[j])/(dij[j]+eps)) * (d[index]-d[pindex]));
                 } 
             }
-
-        __kernel void tspe(__global float* rij, __global float* dij, __global float* d, 
-                          int x, int size, float dc, float learning_rate)
-            {   
-                const float eps = 1e-10;
-                int i = get_global_id(0);
-                int j = get_global_id(1);
-
-                int index = i * size + j;
-                int pindex = i * size + x;
-                
-                if ((dij[j] <= dc) || (dij[j] > dc && dij[j] < rij[j]) && (index != pindex))
-                {   
-                    d[index] = d[index] + (learning_rate * ((rij[j]-dij[j])/(dij[j]+eps)) * (d[index]-d[pindex]));
-                } 
-            }
         """).build()
 
         # Send dihedral angles to CPU/GPU
