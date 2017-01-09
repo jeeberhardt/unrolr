@@ -12,9 +12,8 @@ import argparse
 import numpy as np
 import pyopencl as cl
 
-__author__ = "Jérôme Eberhardt, Roland H Stote, and Annick Dejaegere"
+__author__ = "Jérôme Eberhardt"
 __copyright__ = "Copyright 2016, Jérôme Eberhardt"
-__credits__ = ["Jérôme Eberhardt", "Roland H Stote", "Annick Dejaegere"]
 
 __lience__ = "MIT"
 __maintainer__ = "Jérôme Eberhardt"
