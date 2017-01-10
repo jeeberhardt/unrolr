@@ -1,0 +1,6 @@
+h5py>=2.5.0
+matplotlib>=1.4.3
+numpy>=1.11.3
+pandas>=0.17.1
+pyopencl>=2015.1
+MDAnalysis>=0.15.0
