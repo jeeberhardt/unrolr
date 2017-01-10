@@ -3,7 +3,7 @@ Conformational clustering of MD trajectories using (pivot-based) Stochastic Prox
 
 ## Prerequisites
 
-You need, at a minimum:
+You need, at a minimum (requirements.txt):
 
 * Python 2.7 (only for the moment)
 * NumPy
