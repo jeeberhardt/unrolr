@@ -55,7 +55,7 @@ def extract_dihedral_angles_from_trajectory(top_file, dcd_files, dihedral_type, 
         for segid in segids:
 
         	# Get only the segid from the selected part
-        	s_seg = s.select_atoms('segid %s' % segid)
+        	s_seg = s_all.select_atoms('segid %s' % segid)
         	# Get list of selected residus from segid
         	residues = np.unique(s_seg.resnums)
 
