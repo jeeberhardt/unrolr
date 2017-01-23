@@ -57,7 +57,7 @@ def parse_options():
     parser.add_argument('-r', '--rc', dest='rc',
                         action='store', type=float, nargs='+', 
                         default=None,
-                        help='rc value or rc range [0.1 1 0.1]')
+                        help='rc value or rc range [0.1 1 0.01]')
     parser.add_argument('--run', dest='runs',
                         action='store', type=int, default=5,
                         help='number of spe runs')
