@@ -52,7 +52,7 @@ Now you can set the environment variable.
 export PYOPENCL_CTX='0:1'
 ```
 
-## How-To
+## Documentation
 
 1 . First you need to extract all the C-alpha (or the Phi/Psi) dihedral angles from your trajectory
 ```bash
@@ -63,30 +63,30 @@ python extract_dihedral_angles.py -p topology.psf -d traj.dcd
 * -d/--dcd: single trajectory or list of trajectories (dcd, xtc)
 * -s/--selection: selection command (ex: resid 1:10)(default: all)(documentation: https://goo.gl/4t1mGb)
 * -t/--dihedral: dihedral types you want to extract (choices: ca, phi, psi)(default: ca)
-* -o/--ouput: output name (default: dihedral_angles.h5)
+* -o/--output: output name (default: dihedral_angles.h5)
 
 **Outputs**
 * HDF5 file with the selected dihedral angles
 
-2 . Find the optimal neighborhood RC value (or find the optimal number of cycles) using only a small subset of conformations (only 5000 or 10000), that cover the whole trajectory.
+2 . Find the optimal neighborhood RC value or find the optimal number of cycles, using only a small subset of conformations (only 5000 or 10000) that cover the whole trajectory.
 ```bash
-python optimize.py -d dihedral_angles.h5 --rc 0.1 1.0 0.01 -i 100 # if you want to find the optimal RC value
-python optimize.py -d dihedral_angles.h5 --rc 0.27 -i 100 # if you want to find the optimal cycle value
+python search_parameters.py -d dihedral_angles.h5 -r 0.1 1.0 0.01 -i 100 # if you want to find the optimal RC value
+python search_parameters.py -d dihedral_angles.h5 -r 0.27 -i 100 # if you want to find the optimal cycle value
 ```
 
 **Command line options**
 * -d/--h5: HDF5 file with all the dihedral angles
-* --rc: neighborhood RC value (opt cycle) or RC range (0.1 1 0.1)(opt rc)
-* --run: number of SPE runs (default: 5)
-* -n/--ndim: number of dimension (default: 2)
+* -r/--rc: neighborhood RC value or neighborhood RC range
 * -t/--dihedral: dihedral types you want to use (choices: ca, phi, psi)(default: ca)
+* -n/--ndim: number of dimension (default: 2)
+* --run: number of SPE runs (default: 5)
 * --start: starting frame (default: 0)
 * --stop: last frame (default: -1)
 * -i/--interval: interval (default: 1)
 * -o/--output: output directory (default: .)
 
 **Outputs**
-* configuration file of each spe run (optimized coordinates)
+* configuration file of each spe run (directories of optimized coordinates)
 * stress/correlation in function of rc values (plot and raw data)
 * stress/correlation in function of cycle values (plot and raw data)
 
@@ -97,8 +97,8 @@ python spe.py -d dihedral_angles.h5 -c 10000 -r 0.27
 
 **Command line options**
 * -d/--h5: HDF5 file with all the dihedral angles
-* -c/--cycles: number of optimization cycles
 * -r/--rc: neighborhood rc value
+* -c/--cycles: number of optimization cycles
 * -t/--dihedral: dihedral types you want to use (choices: ca, phi, psi)(default: ca)
 * -n/--ndim: number of dimension (default: 2)
 * --run: number of SPE runs (default: 1)
@@ -114,7 +114,7 @@ python spe.py -d dihedral_angles.h5 -c 10000 -r 0.27
 * ~~HDF5 file with spe trajectory (if selected)~~
 
 ## Citation
-Soon ...
+1. Jérôme Eberhardt, Roland H. Stote, and Annick Dejaegere. (2017) Structural clustering of protein conformations using Stochastic Proximity Embedding. (submitted)
 
 ## License
 MIT
