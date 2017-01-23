@@ -123,6 +123,7 @@ class SPE():
         __kernel void dihedral_distances(__global const float* a, __global float* r, int x, int size)
             {
                 int i = get_global_id(0);
+                float tmp;
 
                 r[i] = 0.0;
                 
@@ -130,9 +131,9 @@ class SPE():
                 {
                     r[i] += cos(a[x*size+g] - a[i*size+g]);
                 }
-         
-                r[i] = sqrt((1.0/size) * 0.5 * (size - r[i]));
-                //r[i] = sqrt(0.5 * (size - r[i]));
+                
+                tmp = (1.0/size) * 0.5 * (size - r[i]);
+                r[i] = sqrt(tmp);
             }
 
         __kernel void euclidean_distances(__global const float* a, __global float* r, int x, int size, int ndim)
@@ -250,6 +251,7 @@ class SPE():
         __kernel void dihedral_distances(__global const float* a, __global float* r, int x, int size)
             {
                 int i = get_global_id(0);
+                float tmp;
 
                 r[i] = 0.0;
                 
@@ -258,8 +260,8 @@ class SPE():
                     r[i] += cos(a[x*size+g] - a[i*size+g]);
                 }
          
-                r[i] = sqrt((1.0/size) * 0.5 * (size - r[i]));
-                //r[i] = sqrt(0.5 * (size - r[i]));
+                tmp = (1.0/size) * 0.5 * (size - r[i]);
+                r[i] = sqrt(tmp);
             }
 
         __kernel void euclidean_distances(__global const float* a, __global float* r, int x, int size, int ndim)
