@@ -114,11 +114,11 @@ python spe.py -d dihedral_angles.h5 -c 10000 -r 0.27
 * ~~HDF5 file with spe trajectory (if selected)~~
 
 ## Todo list
-* Improve dihedral distance metric sensibility
-* Improve OpenCL performance (global/local memory)
-* Unit tests
-* Compatibility with python 3
-* Find a post-doc
+- [ ] Improve dihedral distance metric sensibility
+- [ ] Improve OpenCL performance (global/local memory)
+- [ ] Unit tests
+- [ ] Compatibility with python 3
+- [ ] Find a post-doc
 
 ## Citation
 1. Jérôme Eberhardt, Roland H. Stote, and Annick Dejaegere. (2017) Structural clustering of protein conformations using Stochastic Proximity Embedding. (submitted)
