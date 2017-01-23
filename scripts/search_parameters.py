@@ -122,12 +122,14 @@ def main():
 
                 idx += 1
 
+        param_str = 'rc_%s_i_%s' % (rc, interval)
+
         # Plot result
-        f_name = "%s/spe_optimization/cycle_vs_stress-correlation_i_%s.png" % (output, interval)
+        f_name = "%s/spe_optimization/cycle_vs_stress-correlation_%s.png" % (output, param_str)
         plot_result(df_cycle, 'cycle', 'Cycles', f_name, True)
 
         # Write result to csv file
-        f_name = '%s/spe_optimization/cycle_vs_stress-correlation_i_%s.csv' % (output, interval)
+        f_name = '%s/spe_optimization/cycle_vs_stress-correlation_%s.csv' % (output, param_str)
         df_cycle.to_csv(f_name, index=False)
 
     # If there is 3 values, it means we have to test multiple values of rc
@@ -146,15 +148,16 @@ def main():
 
                 df_rc.loc[idx] = [i+1, r, S.stress, S.correlation]
 
-                idx += 1
+                idx += 1    
+
+        param_str = 'rc_%s_%s_%s_i_%s' % (rc[0], rc[1], rc[2], interval)
 
         # Plot result
-        rc_str = '%s_%s_%s_i_%s' % (rc[0], rc[1], rc[2], interval)
-        fig_name = "%s/spe_optimization/rc_vs_stress-correlation_%s.png" % (output, rc_str)
+        fig_name = "%s/spe_optimization/rc_vs_stress-correlation_%s.png" % (output, param_str)
         plot_result(df_rc, 'rc', r"Neighborhood $r_{c}$", fig_name)
 
         # Write result to csv file
-        file_name = '%s/spe_optimization/rc_vs_stress-correlation_%s.csv' % (output, rc_str)
+        file_name = '%s/spe_optimization/rc_vs_stress-correlation_%s.csv' % (output, param_str)
         df_rc.to_csv(file_name, index=False)
 
     else:
