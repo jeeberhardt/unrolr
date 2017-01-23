@@ -159,7 +159,7 @@ class SPE():
                 int index = i * size + j;
                 int pindex = i * size + x;
                 
-                if ((rij[j] <= rc) || (rij[j] > rc && dij[j] < rij[j]) && (index != pindex))
+                if (((rij[j] <= rc) || (rij[j] > rc && dij[j] < rij[j])) && (index != pindex))
                 {   
                     d[index] = d[index] + (learning_rate * ((rij[j]-dij[j])/(dij[j]+eps)) * (d[index]-d[pindex]));
                 } 
