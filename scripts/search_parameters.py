@@ -54,7 +54,7 @@ def parse_options():
     parser.add_argument('-d', '--h5', dest='hdf5filename', required = True,
                         action='store', type=str,
                         help='HDF5 file with dihedral angles')
-    parser.add_argument('--rc', dest='rc',
+    parser.add_argument('-r', '--rc', dest='rc',
                         action='store', type=float, nargs='+', 
                         default=None,
                         help='rc value or rc range [0.1 1 0.1]')
