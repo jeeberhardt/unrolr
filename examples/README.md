@@ -56,3 +56,5 @@ As the final step, after determining the optimal neighbourhood radius rc cutoff,
 ```bash
 python spe.py -d dihedral_angles.h5 -r 0.23 -c 50000
 ```
+
+The final pSPE optimization process takes approximately XX secondes for 10.000 conformations with 32 pseudo C-alpha dihedral angles using a single (and old) AMD Radeon HD 7950 GPU. As output, you will find the final optimized configuration, named ```configuration.txt```.
