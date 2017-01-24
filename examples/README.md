@@ -51,6 +51,8 @@ It can be seen that a minimum number of 10.000 cycles of optimization, at least,
 
 ### Fire off pSPE!
 
+As the final step, after determining the optimal neighbourhood radius rc cutoff, equal to 0.23 in this case, and the minimal number of optimization cycles, at least 10.000 cycles, the pSPE method can now be applied to the complete data set.
+
 ```bash
 python spe.py -d dihedral_angles.h5 -r 0.23 -c 50000
 ```
