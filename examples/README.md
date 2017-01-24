@@ -11,16 +11,18 @@ The first step will be the extraction of all the pseudo C-alpha dihedral angles 
 python extract_dihedral_angles.py -p villin.psf -d villin.dcd
 ```
 
-As output, you will have a HDF5 file, named ```dihedral_angles.h5``` containing all the pseudo C-alpha dihedral angle (32 in total) from 10.000 frames of the villin headpiece. This HDF5 file can be opened and visualised easily using [HDFView](https://support.hdfgroup.org/products/java/hdfview/).
+As output, you will have a HDF5 file, named ```dihedral_angles.h5```, containing all the pseudo C-alpha dihedral angle (32 in total) from 10.000 frames of the villin headpiece. This HDF5 file can be opened and visualised easily using [HDFView](https://support.hdfgroup.org/products/java/hdfview/).
 
 ### Search optimal pSPE parameters
 
-Now the next big step will be the determination of the optimal neighborhood radius rc and optionally the optimal number of cycles needed to achieve a good convergence, generally equal to 10.000 or 50.000 cycles. However, concerning the optimal neighborhood radius rc there is no general rule, because it depends exclusively of the studied system. The choice of its value will influence significantly the representation in the low dimensional space (n = 2): **if rc is too small, only local distances will be faithfully represented in low dimension, and the final representation will appear as cloud of disconnected clusters. On the contrary, if rc is too large, we loose the magical power of rc and the method will revert to a linear dimensionality reduction method.**
+Now the next big step will be the determination of the optimal neighborhood radius rc and optionally the optimal number of cycles needed to achieve a good convergence, generally equal to 10.000 or 50.000 cycles. However, concerning the optimal neighborhood radius rc there is no general rule, because it depends exclusively of the studied system. The choice of its value will influence significantly the representation in the low dimensional space (n = 2): **if rc is too small, only local distances will be faithfully represented in low dimension, and the final representation will appear as cloud of disconnected clusters. On the contrary, if rc is too large, we loose the magical power of rc and the method will revert to a linear dimensionality reduction method like multidimensional scaling.**
 
 #### Choose the optimal neighborhood radius rc cutoff
 
+As the optimal value of rc depends of the system studied, we can quickly test multiple value, and choose one that will minimizes the stress and maximizes the correlation between the distances in high dimension space and 2D dimension space. For this, we will systematically test values of rc from 0.01 to 1.0 by increments of 0.01.
+
 ```bash
-python search_parameters.py -d dihedral_angles.h5 -r 0.1 1.0 0.01 -i 2
+python search_parameters.py -d dihedral_angles.h5 -r 0.1 1.0 0.01 -i 2 --run 5
 ```
 
 <div>
@@ -31,7 +33,7 @@ python search_parameters.py -d dihedral_angles.h5 -r 0.1 1.0 0.01 -i 2
 #### Choose the optimal number of cycles
 
 ```bash
-python search_parameters.py -d dihedral_angles.h5 -r 0.23 -i 2
+python search_parameters.py -d dihedral_angles.h5 -r 0.23 -i 2 --run 3
 ```
 
 <div>
