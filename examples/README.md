@@ -19,7 +19,7 @@ Now the next big step will be the determination of the optimal neighborhood radi
 
 #### Choose the optimal neighborhood radius rc cutoff
 
-As the optimal value of rc depends of the system studied, we can quickly test multiple value, and choose one that will minimizes the stress and maximizes the correlation between the distances in high dimension space and 2D dimension space. For this, we will systematically test different values of rc from 0.01 to 1.0 by increments of 0.01 (argument ```-r 0.1 1 0.01```). However, for the sake of effeciency, we won't use all the conformations (10.000 in our case), but just a reduced set (5.000 only using argument ```-i 2```).
+As the optimal value of rc depends of the system studied, we can quickly test multiple value, and choose one that will minimizes the stress and maximizes the correlation between the distances in high dimension space and 2D dimension space. For this, we will systematically test different values of rc from 0.01 to 1.0 by increments of 0.01 (argument ```-r 0.1 1 0.01```). However, for the sake of effeciency, we won't use all the conformations (10.000 in our case), but just a reduced set (5.000 only using argument ```-i 2```). For this reduced set, 5 successive independent runs of pSPE algorithm are performed (argument ```--run 5```), with 5.000 steps of optimization cycles.
 
 ```bash
 python search_parameters.py -d dihedral_angles.h5 -r 0.1 1 0.01 -i 2 --run 5
