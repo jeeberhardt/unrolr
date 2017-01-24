@@ -5,13 +5,13 @@ Conformational clustering of MD trajectories using (pivot-based) Stochastic Prox
 
 ### Extraction of dihedral angles
 
-The first step will be the extraction of all the dihedral angles using the topology file (in psf format) and 200 ns aMD trajectory (with only 10000 frames) of the villin headpiece (in dcd format).
+The first step will be the extraction of all the pseudo C-alpha dihedral angles (by default) using the topology file (in psf format) and 200 ns aMD trajectory (with only 10000 frames) of the villin headpiece (in dcd format).
 
 ```bash
 python extract_dihedral_angles.py -p villin.psf -d villin.dcd
 ```
 
-As output, you will have an HDF5 file containing all the pseudo C-alpha dihedral angle (32 in total) from 10.000 frames.
+As output, you will have an HDF5 file, named ```dihedral_angles.h5``` containing all the pseudo C-alpha dihedral angle (32 in total) from 10.000 frames of the villin headpiece. This HDF5 file can be open easily using [HDFView](https://support.hdfgroup.org/products/java/hdfview/).
 
 ### Search optimal pSPE parameters
 
