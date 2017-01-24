@@ -25,22 +25,29 @@ As the optimal value of rc depends of the system studied, we can quickly test mu
 python search_parameters.py -d dihedral_angles.h5 -r 0.1 1 0.01 -i 2 --run 5
 ```
 
-As output, you will find a file (named ```rc_vs_stress-correlation_rc_0.1_1.0_0.01_i_2.csv```) containing all the results, the stress and the correlation in function of the neighbourhood radius rc for each pSPE run, and the plot corresponding (named ```rc_vs_stress-correlation_rc_0.1_1.0_0.01_i_2.png```). The correlation between the actual and the projected distances increases as the neighbourhood radius rc is increased and converges to a plateau value of 0.80 (80%) for values of rc larger than 0.23. Further increase in rc does not improve the correlation but adversely affects the stress.
+As output, you will find a file (named ```rc_vs_stress-correlation_rc_0.1_1.0_0.01_i_2.csv```) containing all the results, the stress and the correlation in function of the neighbourhood radius rc for each pSPE run, and the plot corresponding (named ```rc_vs_stress-correlation_rc_0.1_1.0_0.01_i_2.png```).
 
 <div>
 <img src="outputs/rc_vs_stress-correlation_rc_0.1_1.0_0.01_i_2.png" alt="rc_vs_stress_correlation">
 </div>
 
+The correlation between the actual and the projected distances increases as the neighbourhood radius rc is increased and converges to a plateau value of 0.80 (80%) for values of rc larger than 0.23. Further increase in rc does not improve the correlation but adversely affects the stress.
 
 #### Choose the optimal number of cycles
 
+We can further test the influence of the number of pSPE optimization cycles on the correlation and the stress, while keeping the value of rc fixed at 0.23.
+
 ```bash
-python search_parameters.py -d dihedral_angles.h5 -r 0.23 -i 2 --run 3
+python search_parameters.py -d dihedral_angles.h5 -r 0.23 -i 2 --run 5
 ```
+
+As output, you will find this time a file (named ```cycle_vs_stress-correlation_rc_0.23_i_2.csv```) containing all the results, the stress and the correlation in function of the number of optimization cycles for each pSPE run, and the plot corresponding (named ```cycle_vs_stress-correlation_rc_0.23_i_2.png```).
 
 <div>
 <img src="outputs/cycle_vs_stress-correlation_rc_0.23_i_2.png" alt="rc_vs_stress_correlation">
 </div>
+
+It can be seen that a minimum number of 10.000 cycles of optimization, at least, is needed to obtain converged values of the correlation and stress.
 
 ### Fire off pSPE!
 
