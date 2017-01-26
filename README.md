@@ -106,7 +106,7 @@ python spe.py -d dihedral_angles.h5 -c 10000 -r 0.27
 * --stop: last frame (default: -1)
 * -i/--interval: interval (default: 1)
 * -o/--output: output directory (default: .)
-* -f/--frequency: SPE trajectory saving interval (0 if you don't want)(default: 0)
+* ~~-f/--frequency: SPE trajectory saving interval (0 if you don't want)(default: 0)~~
 * -s/--seed: random seed (if you want to reproduce SPE results) (default: None)
 
 **Outputs**
