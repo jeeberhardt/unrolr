@@ -1,5 +1,5 @@
 # Unrolr
-Conformational clustering of MD trajectories using (pivot-based) Stochastic Proximity Embedding
+Conformational clustering of MD trajectories using (pivot-based) Stochastic Proximity Embedding with dihedral angles
 
 ## Tutorial
 
