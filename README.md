@@ -121,7 +121,7 @@ python spe.py -d dihedral_angles.h5 -c 10000 -r 0.27
 - [ ] Find a post-doc
 
 ## Citation
-1. Jérôme Eberhardt, Roland H. Stote, and Annick Dejaegere. (2017) Structural clustering of protein conformations using Stochastic Proximity Embedding. (submitted)
+1. Jérôme Eberhardt, Roland H. Stote, and Annick Dejaegere. (2017) Unrolr: structural clustering of protein conformations using Stochastic Proximity Embedding. (submitted)
 
 ## License
 MIT
