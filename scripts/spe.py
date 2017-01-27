@@ -24,6 +24,7 @@ export PYOPENCL_NO_CACHE=1
 export PYOPENCL_CTX='0:1'
 """
 
+
 class SPE():
 
     def __init__(self, dihe_file, dihe_type='ca', start=0, stop=-1, interval=1):
@@ -61,7 +62,7 @@ class SPE():
         if not seed:
             seed = np.random.randint(low=1, high=999999, size=1)[0]
 
-        np.random.seed(seed = seed)
+        np.random.seed(seed=seed)
 
         return seed
 
@@ -86,9 +87,9 @@ class SPE():
 
         try:
             if stop == -1:
-                return np.ascontiguousarray(data[start::interval,:], dtype=np.float32)
+                return np.ascontiguousarray(data[start::interval, :], dtype=np.float32)
             else:
-                return np.ascontiguousarray(data[start:stop:interval,:], dtype=np.float32)
+                return np.ascontiguousarray(data[start:stop:interval, :], dtype=np.float32)
         except:
             print("Error with the data selection")
             sys.exit(1)
@@ -112,7 +113,7 @@ class SPE():
         learning_rate = 1.0
         alpha = float(learning_rate - 0.01) / float(cycles)
         dihedral = self.dihedral
-        #output = 'spe_trajectory.h5'
+        # output = 'spe_trajectory.h5'
 
         # Create context and queue
         ctx = cl.create_some_context()
@@ -126,12 +127,12 @@ class SPE():
                 float tmp;
 
                 r[i] = 0.0;
-                
+
                 for(int g=0; g<size; g++)
                 {
                     r[i] += cos(a[x*size+g] - a[i*size+g]);
                 }
-                
+
                 tmp = (1.0/size) * 0.5 * (size - r[i]);
                 r[i] = sqrt(tmp);
             }
@@ -150,20 +151,20 @@ class SPE():
                 r[i] = sqrt(r[i]);
             }
 
-        __kernel void spe(__global float* rij, __global float* dij, __global float* d, 
+        __kernel void spe(__global float* rij, __global float* dij, __global float* d,
                           int x, int size, float rc, float learning_rate)
-            {   
+            {
                 const float eps = 1e-10;
                 int i = get_global_id(0);
                 int j = get_global_id(1);
 
                 int index = i * size + j;
                 int pindex = i * size + x;
-                
+
                 if (((rij[j] <= rc) || (rij[j] > rc && dij[j] < rij[j])) && (index != pindex))
-                {   
+                {
                     d[index] = d[index] + (learning_rate * ((rij[j]-dij[j])/(dij[j]+eps)) * (d[index]-d[pindex]));
-                } 
+                }
             }
         """).build()
 
@@ -202,13 +203,13 @@ class SPE():
             x = np.int32(np.random.randint(dihedral.shape[0]))
 
             # Compute dihedral distances
-            program.dihedral_distances(queue, (dihedral.shape[0],), None, dihe_buf, rij_buf, 
+            program.dihedral_distances(queue, (dihedral.shape[0],), None, dihe_buf, rij_buf,
                                        x, np.int32(dihedral.shape[1])).wait()
             # Compute euclidean distances
-            program.euclidean_distances(queue, (d.shape[1],), None, d_buf, dij_buf, x, 
+            program.euclidean_distances(queue, (d.shape[1],), None, d_buf, dij_buf, x,
                                         np.int32(d.shape[1]), np.int32(d.shape[0])).wait()
             # Stochastic Proximity Embbeding
-            program.spe(queue, d.shape, None, rij_buf, dij_buf, d_buf, x, np.int32(d.shape[1]), 
+            program.spe(queue, d.shape, None, rij_buf, dij_buf, d_buf, x, np.int32(d.shape[1]),
                         np.float32(rc), np.float32(learning_rate)).wait()
 
             learning_rate -= alpha
@@ -254,12 +255,12 @@ class SPE():
                 float tmp;
 
                 r[i] = 0.0;
-                
+
                 for(int g=0; g<size; g++)
                 {
                     r[i] += cos(a[x*size+g] - a[i*size+g]);
                 }
-         
+
                 tmp = (1.0/size) * 0.5 * (size - r[i]);
                 r[i] = sqrt(tmp);
             }
@@ -279,13 +280,13 @@ class SPE():
             }
 
         __kernel void stress(__global float* rij, __global float* dij, __global float* sij, float rc)
-            {   
+            {
                 int i = get_global_id(0);
 
                 sij[i] = 0.0;
-                
+
                 if ((rij[i] <= rc) || (dij[i] < rij[i]))
-                {   
+                {
                     sij[i] = ((dij[i]-rij[i])*(dij[i]-rij[i]))/(rij[i]);
                 }
             }
@@ -307,7 +308,7 @@ class SPE():
         tmp_correl = []
         tmp_sij_sum = 0.0
         tmp_dij_sum = 0.0
-        
+
         old_stress = 999.
         old_correl = 999.
 
@@ -317,14 +318,14 @@ class SPE():
             x = np.int32(np.random.randint(dihedral.shape[0]))
 
             # Dihedral distances
-            program.dihedral_distances(queue, (dihedral.shape[0],), None, dihe_buf, rij_buf, 
+            program.dihedral_distances(queue, (dihedral.shape[0],), None, dihe_buf, rij_buf,
                                        x, np.int32(dihedral.shape[1])).wait()
             # Euclidean distances
-            program.euclidean_distances(queue, (configuration.shape[1],), None, config_buf, 
-                                        dij_buf, x, np.int32(configuration.shape[1]), 
+            program.euclidean_distances(queue, (configuration.shape[1],), None, config_buf,
+                                        dij_buf, x, np.int32(configuration.shape[1]),
                                         np.int32(configuration.shape[0])).wait()
             # Compute part of stress
-            program.stress(queue, (dihedral.shape[0],), None, rij_buf, dij_buf, sij_buf, 
+            program.stress(queue, (dihedral.shape[0],), None, rij_buf, dij_buf, sij_buf,
                            np.float32(rc)).wait()
 
             # Get rij, dij and sij
@@ -341,10 +342,10 @@ class SPE():
             tmp_sij_sum += np.sum(sij[~np.isnan(sij)])
             tmp_dij_sum += np.sum(dij)
             stress = tmp_sij_sum / tmp_dij_sum
-            
+
             # Test for convergence
             if (np.abs(old_stress - stress) < epsilon) and (np.abs(old_correl - correl) < epsilon):
-                self.correlation = correl 
+                self.correlation = correl
                 self.stress = stress
 
                 break
@@ -379,7 +380,7 @@ class SPE():
         if os.path.isdir(dir_name):
             count = 1
             exist = True
-            
+
             while exist:
                 if os.path.isdir(dir_name + '#%d' % (count)):
                     count += 1
@@ -404,7 +405,7 @@ class SPE():
         """
         # Create directory and backup old directory
         dir_str = 'spe_%s_%s_c_%s_rc_%s_d_%s'
-        dir_name = dir_str % (self.dihedral.shape[0], '_'.join(self.dihe_type), 
+        dir_name = dir_str % (self.dihedral.shape[0], '_'.join(self.dihe_type),
                               self.cycles, self.rc, self.ndim)
         self.create_new_directory('%s/%s' % (dir_output, dir_name))
 
@@ -412,8 +413,9 @@ class SPE():
         txt_name = '%s/%s/configuration.txt' % (dir_output, dir_name)
         header = 'seed %s cycle %s rc %s stress %s corr %s'
         fmt = '%010d' + (self.ndim * '%10.5f')
-        np.savetxt(txt_name, self.configuration, fmt=fmt, header=header % (self.random_seed, 
+        np.savetxt(txt_name, self.configuration, fmt=fmt, header=header % (self.random_seed,
                    self.cycles, self.rc, self.stress, self.correlation))
+
 
 def parse_options():
     parser = argparse.ArgumentParser(description='SPE python script')
@@ -456,6 +458,7 @@ def parse_options():
                         help='If you want to reproduce spe trajectory')
 
     return parser.parse_args()
+
 
 def main():
 
