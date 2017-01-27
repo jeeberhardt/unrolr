@@ -22,11 +22,13 @@ __lience__ = "MIT"
 __maintainer__ = "Jérôme Eberhardt"
 __email__ = "qksoneo@gmail.com"
 
+
 def identify_groups_of_continuous_numbers(data):
     groups = []
-    for k, g in groupby(enumerate(data), lambda (i,x):i-x):
+    for k, g in groupby(enumerate(data), lambda (i, x): i - x):
         groups.append(map(itemgetter(1), g))
     return groups
+
 
 def extract_dihedral_angles_from_trajectory(top_file, dcd_files, dihedral_type, selection, output):
 
@@ -54,51 +56,51 @@ def extract_dihedral_angles_from_trajectory(top_file, dcd_files, dihedral_type, 
 
         for segid in segids:
 
-        	# Get only the segid from the selected part
-        	s_seg = s_all.select_atoms('segid %s' % segid)
-        	# Get list of selected residus from segid
-        	residues = np.unique(s_seg.resnums)
+            # Get only the segid from the selected part
+            s_seg = s_all.select_atoms('segid %s' % segid)
+            # Get list of selected residus from segid
+            residues = np.unique(s_seg.resnums)
 
-	        if 'ca' in dihedral_type:
+            if 'ca' in dihedral_type:
 
-	            # Identify groups of continuous number and group them in sublist (for CA dihedral)
-	            fragments = identify_groups_of_continuous_numbers(residues)
+                # Identify groups of continuous number and group them in sublist (for CA dihedral)
+                fragments = identify_groups_of_continuous_numbers(residues)
 
-	            for fragment in fragments:
-	                if len(fragment) >= 4:
-	                    for residu in fragment[0:-3]:
+                for fragment in fragments:
+                    if len(fragment) >= 4:
+                        for residu in fragment[0:-3]:
 
-	                        dihedral = s_seg.select_atoms('resid %d and name CA' % residu, 
-	                        						      'resid %d and name CA' % (residu + 1),
-	                                                      'resid %d and name CA' % (residu + 2), 
-	                                                      'resid %d and name CA' % (residu + 3))
+                            dihedral = s_seg.select_atoms('resid %d and name CA' % residu,
+                                                          'resid %d and name CA' % (residu + 1),
+                                                          'resid %d and name CA' % (residu + 2),
+                                                          'resid %d and name CA' % (residu + 3))
 
-	                        # Add dihedral angle to the timeseries
-	                        collection.addTimeseries(Timeseries.Dihedral(dihedral))
+                            # Add dihedral angle to the timeseries
+                            collection.addTimeseries(Timeseries.Dihedral(dihedral))
 
-	                        n_ca += 1
-	                else:
-	                    print('Warning: This fragment (%s) will be ignored because it\'s too short !' % fragment)
+                            n_ca += 1
+                    else:
+                        print('Warning: This fragment (%s) will be ignored because it\'s too short !' % fragment)
 
-	        if 'phi' in dihedral_type:
-	            for residu in residues:
+            if 'phi' in dihedral_type:
+                for residu in residues:
 
-	                try:
-	                    dihedral = s_seg.residues[residu].phi_selection()
-	                    collection.addTimeseries(Timeseries.Dihedral(dihedral))
-	                    n_phi += 1
-	                except:
-	                    pass
+                    try:
+                        dihedral = s_seg.residues[residu].phi_selection()
+                        collection.addTimeseries(Timeseries.Dihedral(dihedral))
+                        n_phi += 1
+                    except:
+                        pass
 
-	        if 'psi' in dihedral_type:
-	            for residu in residues:
+            if 'psi' in dihedral_type:
+                for residu in residues:
 
-	                try:
-	                    dihedral = s_seg.residues[residu].psi_selection()
-	                    collection.addTimeseries(Timeseries.Dihedral(dihedral))
-	                    n_psi += 1
-	                except:
-	                    pass
+                    try:
+                        dihedral = s_seg.residues[residu].psi_selection()
+                        collection.addTimeseries(Timeseries.Dihedral(dihedral))
+                        n_psi += 1
+                    except:
+                        pass
 
         # Iterate through trajectory and compute (see docs for start/stop/skip options)
         collection.compute(trj=u.trajectory)
@@ -106,20 +108,21 @@ def extract_dihedral_angles_from_trajectory(top_file, dcd_files, dihedral_type, 
         # Write all dihedral angles to HDF5
         if 'ca' in dihedral_type:
             stop = n_ca
-            add_dihedral_angles_to_hdf5(output, collection.data[0:stop,:].T, 'ca')
+            add_dihedral_angles_to_hdf5(output, collection.data[0:stop, :].T, 'ca')
         if 'phi' in dihedral_type:
             start = n_ca
             stop = n_ca + n_phi
-            add_dihedral_angles_to_hdf5(output, collection.data[start:stop,:].T, 'phi')
+            add_dihedral_angles_to_hdf5(output, collection.data[start:stop, :].T, 'phi')
         if 'psi' in dihedral_type:
             start = n_ca + n_phi
-            add_dihedral_angles_to_hdf5(output, collection.data[start:,:].T, 'psi')
+            add_dihedral_angles_to_hdf5(output, collection.data[start:, :].T, 'psi')
 
     # Print total number of dihedral extracted and frame
     with h5py.File(output) as f:
         for key in f.keys():
             print('Dihedral angle %4s extracted   : %10d' % (key, f[key].shape[1]))
         print('Frames used                     : %10d' % (f[key].shape[0]))
+
 
 def add_dihedral_angles_to_hdf5(h5filename, data, dataname):
 
@@ -131,18 +134,19 @@ def add_dihedral_angles_to_hdf5(h5filename, data, dataname):
         except:
             old_size = a[dataname].shape
             a[dataname].resize((old_size[0] + data.shape[0], data.shape[1]))
-            a[dataname][old_size[0]:,] = data
+            a[dataname][old_size[0]:, ] = data
 
         a.flush()
+
 
 def parse_options():
     parser = argparse.ArgumentParser(description='Extract CA dihedral angles')
     parser.add_argument('-p', '--top', dest='top_file', required=True,
                         action='store', type=str,
-                        help = 'topology file used for simulation (pdb, psf)')
+                        help='topology file used for simulation (pdb, psf)')
     parser.add_argument('-d', '--dcd', dest='dcd_files', required=True,
                         action='store', type=str, nargs='+',
-                        help = 'list of dcd files')
+                        help='list of dcd files')
     parser.add_argument('-s', '--selection', dest='selection',
                         action='store', type=str,
                         default='backbone', help='residu selection')
@@ -154,6 +158,7 @@ def parse_options():
                         help='directory output')
 
     return parser.parse_args()
+
 
 def main():
 
