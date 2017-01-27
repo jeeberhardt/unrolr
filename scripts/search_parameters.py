@@ -22,22 +22,23 @@ __lience__ = "MIT"
 __maintainer__ = "Jérôme Eberhardt"
 __email__ = "qksoneo@gmail.com"
 
-#pd.set_option('display.max_rows', None)
+# pd.set_option('display.max_rows', None)
+
 
 def plot_result(df, groupby, xlabel, fig_name, logx=False):
 
     fig, ax = plt.subplots(figsize=(15, 5))
 
     gb = df.groupby([groupby])
-    aggregation = {'stress' : {'mean' : np.mean, 'std': np.std}, 
-                   'correlation' : {'mean' : np.mean, 'std' : np.std}}
+    aggregation = {'stress': {'mean': np.mean, 'std': np.std},
+                   'correlation': {'mean': np.mean, 'std': np.std}}
     gb = gb.agg(aggregation)
-    
+
     gb.stress['mean'].plot(yerr=gb.stress['std'], color='crimson', logx=logx)
 
     ax2 = ax.twinx()
 
-    gb.correlation['mean'].plot(yerr=gb.correlation['std'], 
+    gb.correlation['mean'].plot(yerr=gb.correlation['std'],
                                 color='dodgerblue', logx=logx)
 
     ax.set_xlabel(xlabel, fontsize=20)
@@ -49,13 +50,14 @@ def plot_result(df, groupby, xlabel, fig_name, logx=False):
 
     plt.savefig(fig_name, dpi=300, format='png', bbox_inches='tight')
 
+
 def parse_options():
     parser = argparse.ArgumentParser(description='Optimize SPE parameters')
-    parser.add_argument('-d', '--h5', dest='hdf5filename', required = True,
+    parser.add_argument('-d', '--h5', dest='hdf5filename', required=True,
                         action='store', type=str,
                         help='HDF5 file with dihedral angles')
     parser.add_argument('-r', '--rc', dest='rc',
-                        action='store', type=float, nargs='+', 
+                        action='store', type=float, nargs='+',
                         default=None,
                         help='rc value or rc range [0.1 1 0.01]')
     parser.add_argument('--run', dest='runs',
@@ -65,7 +67,7 @@ def parse_options():
                         action='store', type=int, default=2,
                         help='number of dimension')
     parser.add_argument('-t', '--dihedral', dest='dihedral_type',
-                        action='store', type=str, nargs='+', 
+                        action='store', type=str, nargs='+',
                         choices=['ca', 'phi', 'psi'],
                         default='ca', help='dihedral type')
     parser.add_argument('--start', dest='start',
@@ -82,6 +84,7 @@ def parse_options():
                         help='directory output')
 
     return parser.parse_args()
+
 
 def main():
     options = parse_options()
@@ -135,7 +138,7 @@ def main():
     # If there is 3 values, it means we have to test multiple values of rc
     elif len(rc) == 3:
 
-        df_rc = pd.DataFrame(np.nan, index =[0], columns=['run', 'rc', 'stress', 'correlation'])
+        df_rc = pd.DataFrame(np.nan, index=[0], columns=['run', 'rc', 'stress', 'correlation'])
         idx = 0
 
         for r in np.arange(rc[0], rc[1]+rc[2], rc[2]):
@@ -148,7 +151,7 @@ def main():
 
                 df_rc.loc[idx] = [i+1, r, S.stress, S.correlation]
 
-                idx += 1    
+                idx += 1
 
         param_str = 'rc_%s_%s_%s_i_%s' % (rc[0], rc[1], rc[2], interval)
 
