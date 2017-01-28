@@ -92,7 +92,7 @@ python search_parameters.py -d dihedral_angles.h5 -r 0.27 -i 100 # if you want t
 
 3 . And finally, after finding the optimal rc and cycle values you can run the SPE algorithm at its full potential with all the conformations.
 ```bash
-python spe.py -d dihedral_angles.h5 -c 10000 -r 0.27
+python unrolr.py -d dihedral_angles.h5 -c 10000 -r 0.27
 ```
 
 **Command line options**

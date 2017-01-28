@@ -49,12 +49,12 @@ As output, you will find this time a file (named ```cycle_vs_stress-correlation_
 
 It can be seen that a minimum number of 10.000 cycles of optimization, at least, is needed to obtain converged values of the correlation and stress. Additional data (not shown here) shows that the size of the data set does not affect the convergence rate.
 
-### Fire off pSPE!
+### Fire off Unrolr!
 
 As the final step, after determining the optimal neighbourhood radius rc cutoff, equal to 0.23 in this case, and the minimal number of optimization cycles, at least 10.000 cycles, the pSPE method can now be applied to the complete data set.
 
 ```bash
-python spe.py -d dihedral_angles.h5 -r 0.23 -c 50000
+python unrolr.py -d dihedral_angles.h5 -r 0.23 -c 50000
 ```
 
 The final pSPE optimization process takes approximately 13 seconds for 10.000 conformations with 32 pseudo C-alpha dihedral angles and 50.000 cycles on a single (and now old) AMD Radeon HD 7950 GPU. As output, you will find the final optimized configuration, named ```configuration.txt```. Using the tool [visualize](https://github.com/jeeberhardt/visualize), you can now explore easily the conformational space sampled during the MD simulation.
