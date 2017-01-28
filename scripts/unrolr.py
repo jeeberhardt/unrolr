@@ -25,7 +25,7 @@ export PYOPENCL_CTX='0:1'
 """
 
 
-class SPE():
+class Unrolr():
 
     def __init__(self, dihe_file, dihe_type='ca', start=0, stop=-1, interval=1):
 
@@ -108,7 +108,7 @@ class SPE():
 
     def spe(self, rc, cycles=10000, ndim=2, frequency=0):
         """
-        The SPE method itself !
+        The Unrolr (pSPE + dihedral distance) method itself !
         """
         learning_rate = 1.0
         alpha = float(learning_rate - 0.01) / float(cycles)
@@ -355,7 +355,7 @@ class SPE():
 
     def fit(self, rc, cycles=10000, ndim=2, frequency=0, random_seed=None):
         """
-        Run the SPE method
+        Run the Unrolr (pSPE + didhedral distance) method
         """
         # Save some variables
         self.rc = rc
@@ -477,16 +477,16 @@ def main():
     random_seed = options.random_seed
     dihe_type = options.dihedral_type
 
-    S = SPE(dihe_file, dihe_type, start, stop, interval)
+    U = Unrolr(dihe_file, dihe_type, start, stop, interval)
 
     for i in xrange(runs):
 
-        S.fit(rc, cycles, ndim, frequency, random_seed)
+        U.fit(rc, cycles, ndim, frequency, random_seed)
         print("Random seed              : %8d" % S.random_seed)
         print("Stress                   : %8.3f" % S.stress)
         print("Correlation              : %8.3f" % S.correlation)
 
-        S.save(output)
+        U.save(output)
 
 if __name__ == '__main__':
     main()
