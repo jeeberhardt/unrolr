@@ -105,6 +105,9 @@ class Unrolr():
             w.flush()
 
     def get_total_number_of_frames(self, h5filename, datanames):
+        """
+        Get number of total conformations from HDF5 file
+        """
         with h5py.File(h5filename) as f:
             return f[datanames[0]].shape[0]
 
