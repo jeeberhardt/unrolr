@@ -58,9 +58,11 @@ class Unrolr():
             return False
 
     def set_random_state(self, seed=None):
-        # Set Random state (seed)
+        """
+        Set Random state (seed)
+        """
         if not seed:
-            seed = np.random.randint(low=1, high=999999, size=1)[0]
+            seed = np.random.randint(low=1, high=6.02E23, size=1)[0]
 
         np.random.seed(seed=seed)
 
