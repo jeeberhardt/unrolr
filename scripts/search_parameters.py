@@ -7,8 +7,9 @@ from __future__ import print_function
 
 import os
 import sys
-import h5py
 import argparse
+
+import h5py
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
