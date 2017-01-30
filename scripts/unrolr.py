@@ -21,18 +21,18 @@ __email__ = "qksoneo@gmail.com"
 
 """
 export PYOPENCL_NO_CACHE=1
-export PYOPENCL_CTX='0:1'
+export PYOPENCL_CTX="0:1"
 """
 
 
 class Unrolr():
 
-    def __init__(self, dihe_file, dihe_type='ca', start=0, stop=-1, interval=1):
+    def __init__(self, dihe_file, dihe_type="ca", start=0, stop=-1, interval=1):
 
         # Check PYOPENCL_CTX environnment variable
-        if not self.check_environnment_variable('PYOPENCL_CTX'):
-            print('Error: The environnment variable PYOPENCL_CTX is not defined !')
-            print('Tip: python -c \'import pyopencl as cl; cl.create_some_context()\'')
+        if not self.check_environnment_variable("PYOPENCL_CTX"):
+            print("Error: The environnment variable PYOPENCL_CTX is not defined !")
+            print("Tip: python -c \"import pyopencl as cl; cl.create_some_context()\"")
             sys.exit(1)
 
         if not isinstance(dihe_type, (list, tuple)):
@@ -70,7 +70,7 @@ class Unrolr():
         """
         Read data from HDF5 file with the name dataname
         """
-        with h5py.File(h5filename, 'r') as r:
+        with h5py.File(h5filename, "r") as r:
             return r[dataname][:]
 
     def read_dihedral_angles_from_hdf5(self, h5filename, datanames, start=0, stop=-1, interval=1):
@@ -98,7 +98,7 @@ class Unrolr():
         """
         Store data in a HDF5 file with the name dataname
         """
-        with h5py.File(h5filename, 'a') as w:
+        with h5py.File(h5filename, "a") as w:
             w[dataname] = data
             w.flush()
 
@@ -113,7 +113,7 @@ class Unrolr():
         learning_rate = 1.0
         alpha = float(learning_rate - 0.01) / float(cycles)
         dihedral = self.dihedral
-        # output = 'spe_trajectory.h5'
+        # output = "spe_trajectory.h5"
 
         # Create context and queue
         ctx = cl.create_some_context()
@@ -187,7 +187,7 @@ class Unrolr():
             # Open HDF5 file
             f = h5py.File(output)
             # Store initial (random) configuration to HDF5
-            store_data_to_hdf5(output, d.T, 'trajectory/frame_%010d' % 0)
+            store_data_to_hdf5(output, d.T, "trajectory/frame_%010d" % 0)
         """
 
         freq_progression = cycles / 100.
@@ -196,7 +196,7 @@ class Unrolr():
 
             if i % freq_progression == 0:
                 percentage = float(i) / float(cycles) * 100.
-                sys.stdout.write('\rSPE Optimization         : %8.3f %%' % percentage)
+                sys.stdout.write("\rSPE Optimization         : %8.3f %%" % percentage)
                 sys.stdout.flush()
 
             # Choose random configuration (pivot)
@@ -219,7 +219,7 @@ class Unrolr():
                 # Get the current configuration
                 cl.enqueue_copy(queue, d, d_buf)
                 # Store current configuration to HDF5 file
-                store_data_to_hdf5(output, d.T, 'trajectory/frame_%010d' % i)
+                store_data_to_hdf5(output, d.T, "trajectory/frame_%010d" % i)
             """
 
         """
@@ -382,10 +382,10 @@ class Unrolr():
             exist = True
 
             while exist:
-                if os.path.isdir(dir_name + '#%d' % (count)):
+                if os.path.isdir(dir_name + "#%d" % (count)):
                     count += 1
                 else:
-                    os.rename(dir_name, dir_name + '#%d' % (count))
+                    os.rename(dir_name, dir_name + "#%d" % (count))
                     exist = False
         else:
             pass
@@ -399,63 +399,63 @@ class Unrolr():
 
         os.makedirs(dir_name)
 
-    def save(self, dir_output='.'):
+    def save(self, dir_output="."):
         """
         Save all the data
         """
         # Create directory and backup old directory
-        dir_str = 'spe_%s_%s_c_%s_rc_%s_d_%s'
-        dir_name = dir_str % (self.dihedral.shape[0], '_'.join(self.dihe_type),
+        dir_str = "spe_%s_%s_c_%s_rc_%s_d_%s"
+        dir_name = dir_str % (self.dihedral.shape[0], "_".join(self.dihe_type),
                               self.cycles, self.rc, self.ndim)
-        self.create_new_directory('%s/%s' % (dir_output, dir_name))
+        self.create_new_directory("%s/%s" % (dir_output, dir_name))
 
         # Save final configuration to txt file
-        txt_name = '%s/%s/configuration.txt' % (dir_output, dir_name)
-        header = 'seed %s cycle %s rc %s stress %s corr %s'
-        fmt = '%010d' + (self.ndim * '%10.5f')
+        txt_name = "%s/%s/configuration.txt" % (dir_output, dir_name)
+        header = "seed %s cycle %s rc %s stress %s corr %s"
+        fmt = "%010d" + (self.ndim * "%10.5f")
         np.savetxt(txt_name, self.configuration, fmt=fmt, header=header % (self.random_seed,
                    self.cycles, self.rc, self.stress, self.correlation))
 
 
 def parse_options():
-    parser = argparse.ArgumentParser(description='SPE python script')
-    parser.add_argument('-d', '--h5', dest='hdf5filename', required=True,
-                        action='store', type=str,
-                        help='HDF5 file with dihedral angles')
-    parser.add_argument('-c', '--cycles', dest='cycles',
-                        action='store', type=int, default=1000,
-                        help='number of cycle')
-    parser.add_argument('-t', '--dihedral', dest='dihedral_type',
-                        action='store', type=str, nargs='+',
-                        choices=['ca', 'phi', 'psi'],
-                        default='ca', help='dihedral type')
-    parser.add_argument('-r', '--rc', dest='rc',
-                        action='store', type=float, default=1.,
-                        help='neighborhood cutoff')
-    parser.add_argument('-n', '--ndim', dest='ndim',
-                        action='store', type=int, default=2,
-                        help='number of dimension')
-    parser.add_argument('--run', dest='runs',
-                        action='store', type=int, default=1,
-                        help='number of spe runs')
-    parser.add_argument('--start', dest='start',
-                        action='store', type=int, default=0,
-                        help='used frames from this position')
-    parser.add_argument('--stop', dest='stop',
-                        action='store', type=int, default=-1,
-                        help='used frames until this position')
-    parser.add_argument('-i', '--interval', dest='interval',
-                        action='store', type=int, default=1,
-                        help='used frames at this interval')
-    parser.add_argument('-o', '--output', dest='output',
-                        action='store', type=str, default='.',
-                        help='directory output')
-    parser.add_argument('-f', '--frequency', dest='frequency',
-                        action='store', type=int, default=0,
-                        help='trajectory saving interval (0 if you don\'t want)')
-    parser.add_argument('-s', '--seed', dest='random_seed',
-                        action='store', type=int, default=None,
-                        help='If you want to reproduce spe trajectory')
+    parser = argparse.ArgumentParser(description="SPE python script")
+    parser.add_argument("-d", "--h5", dest="hdf5filename", required=True,
+                        action="store", type=str,
+                        help="HDF5 file with dihedral angles")
+    parser.add_argument("-c", "--cycles", dest="cycles",
+                        action="store", type=int, default=1000,
+                        help="number of cycle")
+    parser.add_argument("-t", "--dihedral", dest="dihedral_type",
+                        action="store", type=str, nargs="+",
+                        choices=["ca", "phi", "psi"],
+                        default="ca", help="dihedral type")
+    parser.add_argument("-r", "--rc", dest="rc",
+                        action="store", type=float, default=1.,
+                        help="neighborhood cutoff")
+    parser.add_argument("-n", "--ndim", dest="ndim",
+                        action="store", type=int, default=2,
+                        help="number of dimension")
+    parser.add_argument("--run", dest="runs",
+                        action="store", type=int, default=1,
+                        help="number of spe runs")
+    parser.add_argument("--start", dest="start",
+                        action="store", type=int, default=0,
+                        help="used frames from this position")
+    parser.add_argument("--stop", dest="stop",
+                        action="store", type=int, default=-1,
+                        help="used frames until this position")
+    parser.add_argument("-i", "--interval", dest="interval",
+                        action="store", type=int, default=1,
+                        help="used frames at this interval")
+    parser.add_argument("-o", "--output", dest="output",
+                        action="store", type=str, default=".",
+                        help="directory output")
+    parser.add_argument("-f", "--frequency", dest="frequency",
+                        action="store", type=int, default=0,
+                        help="trajectory saving interval (0 if you don\"t want)")
+    parser.add_argument("-s", "--seed", dest="random_seed",
+                        action="store", type=int, default=None,
+                        help="If you want to reproduce spe trajectory")
 
     return parser.parse_args()
 
@@ -488,5 +488,5 @@ def main():
 
         U.save(output)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

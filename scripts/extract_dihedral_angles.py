@@ -33,7 +33,7 @@ def identify_groups_of_continuous_numbers(data):
 def extract_dihedral_angles_from_trajectory(top_file, dcd_files, dihedral_type, selection, output):
 
     if os.path.isfile(output):
-        print('Error: HDF5 dihedral angles file already exists!')
+        print("Error: HDF5 dihedral angles file already exists!")
         sys.exit(1)
 
     for dcd in dcd_files:
@@ -57,11 +57,11 @@ def extract_dihedral_angles_from_trajectory(top_file, dcd_files, dihedral_type, 
         for segid in segids:
 
             # Get only the segid from the selected part
-            s_seg = s_all.select_atoms('segid %s' % segid)
+            s_seg = s_all.select_atoms("segid %s" % segid)
             # Get list of selected residus from segid
             residues = np.unique(s_seg.resnums)
 
-            if 'ca' in dihedral_type:
+            if "ca" in dihedral_type:
 
                 # Identify groups of continuous number and group them in sublist (for CA dihedral)
                 fragments = identify_groups_of_continuous_numbers(residues)
@@ -70,19 +70,19 @@ def extract_dihedral_angles_from_trajectory(top_file, dcd_files, dihedral_type, 
                     if len(fragment) >= 4:
                         for residu in fragment[0:-3]:
 
-                            dihedral = s_seg.select_atoms('resid %d and name CA' % residu,
-                                                          'resid %d and name CA' % (residu + 1),
-                                                          'resid %d and name CA' % (residu + 2),
-                                                          'resid %d and name CA' % (residu + 3))
+                            dihedral = s_seg.select_atoms("resid %d and name CA" % residu,
+                                                          "resid %d and name CA" % (residu + 1),
+                                                          "resid %d and name CA" % (residu + 2),
+                                                          "resid %d and name CA" % (residu + 3))
 
                             # Add dihedral angle to the timeseries
                             collection.addTimeseries(Timeseries.Dihedral(dihedral))
 
                             n_ca += 1
                     else:
-                        print('Warning: This fragment (%s) will be ignored because it\'s too short !' % fragment)
+                        print("Warning: This fragment (%s) will be ignored because it\"s too short !" % fragment)
 
-            if 'phi' in dihedral_type:
+            if "phi" in dihedral_type:
                 for residu in residues:
 
                     try:
@@ -92,7 +92,7 @@ def extract_dihedral_angles_from_trajectory(top_file, dcd_files, dihedral_type, 
                     except:
                         pass
 
-            if 'psi' in dihedral_type:
+            if "psi" in dihedral_type:
                 for residu in residues:
 
                     try:
@@ -106,27 +106,27 @@ def extract_dihedral_angles_from_trajectory(top_file, dcd_files, dihedral_type, 
         collection.compute(trj=u.trajectory)
 
         # Write all dihedral angles to HDF5
-        if 'ca' in dihedral_type:
+        if "ca" in dihedral_type:
             stop = n_ca
-            add_dihedral_angles_to_hdf5(output, collection.data[0:stop, :].T, 'ca')
-        if 'phi' in dihedral_type:
+            add_dihedral_angles_to_hdf5(output, collection.data[0:stop, :].T, "ca")
+        if "phi" in dihedral_type:
             start = n_ca
             stop = n_ca + n_phi
-            add_dihedral_angles_to_hdf5(output, collection.data[start:stop, :].T, 'phi')
-        if 'psi' in dihedral_type:
+            add_dihedral_angles_to_hdf5(output, collection.data[start:stop, :].T, "phi")
+        if "psi" in dihedral_type:
             start = n_ca + n_phi
-            add_dihedral_angles_to_hdf5(output, collection.data[start:, :].T, 'psi')
+            add_dihedral_angles_to_hdf5(output, collection.data[start:, :].T, "psi")
 
     # Print total number of dihedral extracted and frame
     with h5py.File(output) as f:
         for key in f.keys():
-            print('Dihedral angle %4s extracted   : %10d' % (key, f[key].shape[1]))
-        print('Frames used                     : %10d' % (f[key].shape[0]))
+            print("Dihedral angle %4s extracted   : %10d" % (key, f[key].shape[1]))
+        print("Frames used                     : %10d" % (f[key].shape[0]))
 
 
 def add_dihedral_angles_to_hdf5(h5filename, data, dataname):
 
-    with h5py.File(h5filename, 'a') as a:
+    with h5py.File(h5filename, "a") as a:
 
         try:
             dset = a.create_dataset(dataname, (data.shape[0], data.shape[1]), maxshape=(None, data.shape[1]))
@@ -140,22 +140,22 @@ def add_dihedral_angles_to_hdf5(h5filename, data, dataname):
 
 
 def parse_options():
-    parser = argparse.ArgumentParser(description='Extract CA dihedral angles')
-    parser.add_argument('-p', '--top', dest='top_file', required=True,
-                        action='store', type=str,
-                        help='topology file used for simulation (pdb, psf)')
-    parser.add_argument('-d', '--dcd', dest='dcd_files', required=True,
-                        action='store', type=str, nargs='+',
-                        help='list of dcd files')
-    parser.add_argument('-s', '--selection', dest='selection',
-                        action='store', type=str,
-                        default='backbone', help='residu selection')
-    parser.add_argument('-t', '--dihedral', dest='dihedral_type',
-                        action='store', type=str, nargs='+', choices=['ca', 'phi', 'psi'],
-                        default='ca', help='dihedral type')
-    parser.add_argument('-o' '--output', dest='output',
-                        action='store', type=str, default='dihedral_angles.h5',
-                        help='directory output')
+    parser = argparse.ArgumentParser(description="Extract CA dihedral angles")
+    parser.add_argument("-p", "--top", dest="top_file", required=True,
+                        action="store", type=str,
+                        help="topology file used for simulation (pdb, psf)")
+    parser.add_argument("-d", "--dcd", dest="dcd_files", required=True,
+                        action="store", type=str, nargs="+",
+                        help="list of dcd files")
+    parser.add_argument("-s", "--selection", dest="selection",
+                        action="store", type=str,
+                        default="backbone", help="residu selection")
+    parser.add_argument("-t", "--dihedral", dest="dihedral_type",
+                        action="store", type=str, nargs="+", choices=["ca", "phi", "psi"],
+                        default="ca", help="dihedral type")
+    parser.add_argument("-o" "--output", dest="output",
+                        action="store", type=str, default="dihedral_angles.h5",
+                        help="directory output")
 
     return parser.parse_args()
 
@@ -172,5 +172,5 @@ def main():
 
     extract_dihedral_angles_from_trajectory(top_file, dcd_files, dihedral_type, selection, output)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
