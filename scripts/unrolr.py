@@ -63,7 +63,7 @@ class Unrolr():
         Set Random state (seed)
         """
         if not seed:
-            seed = np.random.randint(low=1, high=6.02E23, size=1)[0]
+            seed = np.random.randint(low=1, high=1E6, size=1)[0]
 
         np.random.seed(seed=seed)
 
