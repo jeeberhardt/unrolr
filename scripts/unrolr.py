@@ -488,9 +488,9 @@ def main():
     for i in xrange(runs):
 
         U.fit(rc, cycles, ndim, frequency, random_seed)
-        print("Random seed              : %8d" % S.random_seed)
-        print("Stress                   : %8.3f" % S.stress)
-        print("Correlation              : %8.3f" % S.correlation)
+        print("Random seed              : %8d" % U.random_seed)
+        print("Stress                   : %8.3f" % U.stress)
+        print("Correlation              : %8.3f" % U.correlation)
 
         U.save(output)
 
