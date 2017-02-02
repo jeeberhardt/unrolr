@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/59756594.svg)](https://zenodo.org/badge/latestdoi/59756594)
+
 # Unrolr
 Conformational clustering of MD trajectories using (pivot-based) Stochastic Proximity Embedding with dihedral angles
 
@@ -121,7 +123,7 @@ python unrolr.py -d dihedral_angles.h5 -c 10000 -r 0.27
 - [ ] Find a post-doc
 
 ## Citation
-1. Jérôme Eberhardt, Roland H. Stote, and Annick Dejaegere. (2017) Unrolr: structural clustering of protein conformations using Stochastic Proximity Embedding. (submitted)
+1. Jérôme Eberhardt, Roland H. Stote, and Annick Dejaegere. (2017) Unrolr: structural clustering of protein conformations using Stochastic Proximity Embedding. (submitted) [![DOI](https://zenodo.org/badge/59756594.svg)](https://zenodo.org/badge/latestdoi/59756594)
 
 ## License
 MIT
