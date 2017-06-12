@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from spe import SPE
+from unrolr import Unrolr
 
 __author__ = "Jérôme Eberhardt"
 __copyright__ = "Copyright 2016, Jérôme Eberhardt"
