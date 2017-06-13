@@ -100,7 +100,7 @@ def main():
     runs = options.runs
     dihe_type = options.dihedral_type
 
-    S = SPE(dihe_file, dihe_type, start, stop, interval)
+    U = Unrolr(dihe_file, dihe_type, start, stop, interval)
 
     # If there is only one value, it means we want to test multiple values of cycle
     if len(rc) == 1:
@@ -119,10 +119,10 @@ def main():
 
             for i in xrange(runs):
 
-                S.fit(rc, cycle, ndim)
-                S.save("%s/spe_optimization" % output)
+                U.fit(rc, cycle, ndim)
+                U.save("%s/spe_optimization" % output)
 
-                df_cycle.loc[idx] = [i+1, rc, cycle, S.stress, S.correlation]
+                df_cycle.loc[idx] = [i+1, rc, cycle, U.stress, U.correlation]
 
                 idx += 1
 
@@ -147,10 +147,10 @@ def main():
 
             for i in xrange(runs):
 
-                S.fit(r, 5000, ndim)
-                S.save("%s/spe_optimization" % output)
+                U.fit(r, 5000, ndim)
+                U.save("%s/spe_optimization" % output)
 
-                df_rc.loc[idx] = [i+1, r, S.stress, S.correlation]
+                df_rc.loc[idx] = [i+1, r, U.stress, U.correlation]
 
                 idx += 1
 
