@@ -31,8 +31,7 @@ def plot_result(df, groupby, xlabel, fig_name, logx=False):
     fig, ax = plt.subplots(figsize=(15, 5))
 
     gb = df.groupby([groupby])
-    aggregation = {"stress": {"mean": np.mean, "std": np.std},
-                   "correlation": {"mean": np.mean, "std": np.std}}
+    aggregation = {"stress": [np.mean, np.std], "correlation": [np.mean, np.std]}
     gb = gb.agg(aggregation)
 
     gb.stress["mean"].plot(yerr=gb.stress["std"], color="crimson", logx=logx)
