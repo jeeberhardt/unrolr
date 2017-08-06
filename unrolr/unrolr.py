@@ -44,10 +44,14 @@ class Unrolr():
         self.r_neighbors = r_neighbors
         self.n_iter = n_iter
         self.learning_rate = 1.0
-        self.epsilon = 1e-5
+        self.epsilon = 1e-3
 
         # Set numpy random state
         self.random_seed = self._set_random_state(random_seed)
+
+        self.embedding = None
+        self.stress = None
+        self.correlation = None
 
     def _check_environnment_variable(self, variable):
         """
@@ -178,6 +182,8 @@ class Unrolr():
         """
         Dirty function to evaluate the final embedding
         """
+        embedding = self.embedding
+        r_neighbors = self.r_neighbors
 
         # Creation du contexte et de la queue
         ctx = cl.create_some_context()
@@ -229,7 +235,7 @@ class Unrolr():
         """).build()
 
         # Send dihedral angles and embedding on CPU/GPU
-        e_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=self.embedding)
+        e_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=embedding)
         X_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=X)
 
         # Allocate memory
@@ -254,15 +260,15 @@ class Unrolr():
             pivot = np.int32(np.random.randint(X.shape[0]))
 
             # Dihedral distances
-            program.dihedral_distances(queue, (X.shape[0],), None, X_buf, rij_buf,
+            program.dihedral_distance(queue, (X.shape[0],), None, X_buf, rij_buf,
                                        pivot, np.int32(X.shape[1])).wait()
             # Euclidean distances
-            program.euclidean_distances(queue, (self.embedding.shape[1],), None, e_buf,
-                                        dij_buf, pivot, np.int32(self.embedding.shape[1]),
-                                        np.int32(self.embedding.shape[0])).wait()
+            program.euclidean_distance(queue, (embedding.shape[1],), None, e_buf,
+                                        dij_buf, pivot, np.int32(embedding.shape[1]),
+                                        np.int32(embedding.shape[0])).wait()
             # Compute part of stress
             program.stress(queue, (X.shape[0],), None, rij_buf, dij_buf, sij_buf,
-                           np.float32(self.r_neighbors)).wait()
+                           np.float32(r_neighbors)).wait()
 
             # Get rij, dij and sij
             cl.enqueue_copy(queue, rij, rij_buf)
@@ -278,6 +284,10 @@ class Unrolr():
             tmp_sij_sum += np.sum(sij[~np.isnan(sij)])
             tmp_dij_sum += np.sum(dij)
             stress = tmp_sij_sum / tmp_dij_sum
+
+            sys.stdout.write("%s %s\n" % (old_stress, stress))
+            sys.stdout.write("%s %s\n" % (old_correl, correl))
+            sys.stdout.flush()
 
             # Test for convergence
             if (np.abs(old_stress - stress) < self.epsilon) and (np.abs(old_correl - correl) < self.epsilon):
@@ -295,6 +305,7 @@ class Unrolr():
         """
         # Fire off SPE calculation !!
         self._spe(X)
+        print(self.embedding)
         # Evaluation embedding
         self._evaluate_embedding(X)
 
@@ -368,7 +379,8 @@ def main():
     print("Stress                   : %8.3f" % U.stress)
     print("Correlation              : %8.3f" % U.correlation)
 
-    U.save(output)
+    frames = np.arange(start, X.shape[0], skip)
+    U.save(output, frames)
 
 if __name__ == "__main__":
     main()
