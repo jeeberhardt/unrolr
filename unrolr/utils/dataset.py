@@ -26,15 +26,10 @@ def read_dataset(fname, dname, start=0, stop=-1, skip=1):
     data = None
 
     with h5py.File(fname, 'r') as f:
-        try:
-            if stop == -1:
-                return np.ascontiguousarray(data[start::skip,], dtype=np.float32)
-            else:
-                return np.ascontiguousarray(data[start:stop:skip,], dtype=np.float32)
-        except:
-            print("Error: Get retrieve the data from HDF5 file!")
-            return None
-
+        if stop == -1:
+            return np.ascontiguousarray(f[dname][start::skip,], dtype=np.float32)
+        else:
+            return np.ascontiguousarray(f[dname][start:stop:skip,], dtype=np.float32)
     return data
 
 def save_dataset(fname, dname, data):
