@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+#
 # Jérôme Eberhardt 2016-2017
 # Unrolr
 #
@@ -8,6 +8,7 @@
 # Author: Jérôme Eberhardt <qksonoe@gmail.com>
 #
 # License: MIT
+
 
 import h5py
 import numpy as np

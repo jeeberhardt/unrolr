@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+#
 # Jérôme Eberhardt 2016-2017
 # Unrolr
 #
@@ -9,8 +9,7 @@
 #
 # License: MIT
 
-import os
-import sys
+
 import argparse
 from itertools import groupby
 from operator import itemgetter
