@@ -83,7 +83,7 @@ def calpha_dihedrals(top_file, trj_files, selection='backbone', start=0, stop=-1
 
     return data
 
-def backbone_dihedrals(top_file, trj_files, selection='bakcbone', start=0, stop=-1, skip=1):
+def backbone_dihedrals(top_file, trj_files, selection='backbone', start=0, stop=-1, skip=1):
 
     data = None
 
@@ -156,7 +156,7 @@ def main():
     else:
         data = backbone_dihedrals(top_file, trj_files, selection)
 
-    save_dataset(output, dihedral_type, data)
+    save_dataset(output, "dihedral_angles", data)
 
 if __name__ == '__main__':
     main()
