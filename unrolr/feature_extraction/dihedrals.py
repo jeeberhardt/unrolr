@@ -4,7 +4,7 @@
 # Jérôme Eberhardt 2016-2017
 # Unrolr
 #
-# Extract phi/psi dihedral angles from trajectory
+# Extract calpha or phi/psi dihedral angles from trajectories
 # Author: Jérôme Eberhardt <qksonoe@gmail.com>
 #
 # License: MIT
@@ -19,7 +19,6 @@ import h5py
 import numpy as np
 from MDAnalysis import Universe, collection, Timeseries
 
-sys.path.append('../utils')
 from ..utils import save_dataset
 
 __author__ = "Jérôme Eberhardt"
