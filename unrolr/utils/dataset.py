@@ -28,11 +28,12 @@ def read_dataset(fname, dname, start=0, stop=-1, skip=1):
     with h5py.File(fname, 'r') as f:
         try:
             if stop == -1:
-                data[:] = f[dname][start::skip,]
+                return np.ascontiguousarray(data[start::skip,], dtype=np.float32)
             else:
-                data[:] = f[dname][start:stop:skip,]
+                return np.ascontiguousarray(data[start:stop:skip,], dtype=np.float32)
         except:
-            pass
+            print("Error: Get retrieve the data from HDF5 file!")
+            return None
 
     return data
 
