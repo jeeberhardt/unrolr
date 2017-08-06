@@ -1,7 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
+# Jérôme Eberhardt 2016-2017
+# Unrolr
+#
+# The core of Unrolr (pSPE + dihedral distance as metric)
+# Author: Jérôme Eberhardt <qksonoe@gmail.com>
+#
+# License: MIT
 
-""" Core of the pSPE method using dihedral distance as metric """
 
 from __future__ import print_function
 
@@ -13,6 +20,8 @@ import h5py
 import numpy as np
 import pyopencl as cl
 
+from .utils import read_dataset
+
 __author__ = "Jérôme Eberhardt"
 __copyright__ = "Copyright 2016, Jérôme Eberhardt"
 
@@ -20,36 +29,27 @@ __lience__ = "MIT"
 __maintainer__ = "Jérôme Eberhardt"
 __email__ = "qksoneo@gmail.com"
 
-"""
-export PYOPENCL_NO_CACHE=1
-export PYOPENCL_CTX="0:1"
-"""
-
 
 class Unrolr():
 
-    def __init__(self, dihe_file, dihe_type="ca", start=0, stop=-1, interval=1):
+    def __init__(self, r_neighbors, n_components=2, n_iter=10000, random_seed=None):
 
         # Check PYOPENCL_CTX environnment variable
-        if not self.check_environnment_variable("PYOPENCL_CTX"):
+        if not self._check_environnment_variable("PYOPENCL_CTX"):
             print("Error: The environnment variable PYOPENCL_CTX is not defined !")
             print("Tip: python -c \"import pyopencl as cl; cl.create_some_context()\"")
             sys.exit(1)
 
-        if not isinstance(dihe_type, (list, tuple)):
-            dihe_type = dihe_type.split()
+        self.n_components = n_components
+        self.r_neighbors = r_neighbors
+        self.n_iter = n_iter
+        self.learning_rate = 1.0
+        self.epsilon = 1e-5
 
-        # Get all dihedral angles
-        self.dihedral = self.read_dihedral_angles_from_hdf5(dihe_file, dihe_type, start, stop, interval)
+        # Set numpy random state
+        self.random_seed = self._set_random_state(random_seed)
 
-        # Generate frame idx from start, stop and interval
-        if stop == -1:
-            stop = self.get_total_number_of_frames(dihe_file, dihe_type)
-
-        self.frames = np.arange(start, stop, interval)
-        self.dihe_type = dihe_type
-
-    def check_environnment_variable(self, variable):
+    def _check_environnment_variable(self, variable):
         """
         Check if an environnment variable exist or not
         """
@@ -58,7 +58,7 @@ class Unrolr():
         else:
             return False
 
-    def set_random_state(self, seed=None):
+    def _set_random_state(self, seed=None):
         """
         Set Random state (seed)
         """
@@ -69,57 +69,11 @@ class Unrolr():
 
         return seed
 
-    def read_data_from_hdf5(self, h5filename, dataname):
-        """
-        Read data from HDF5 file with the name dataname
-        """
-        with h5py.File(h5filename, "r") as r:
-            return r[dataname][:]
-
-    def read_dihedral_angles_from_hdf5(self, h5filename, datanames, start=0, stop=-1, interval=1):
-        """
-        Read dihedral angles from HDF5 with a certain interval, start and stop
-        """
-        data = None
-
-        for dataname in datanames:
-            if data is not None:
-                data = np.concatenate((data, self.read_data_from_hdf5(h5filename, dataname)), axis=1)
-            else:
-                data = self.read_data_from_hdf5(h5filename, dataname)
-
-        try:
-            if stop == -1:
-                return np.ascontiguousarray(data[start::interval, :], dtype=np.float32)
-            else:
-                return np.ascontiguousarray(data[start:stop:interval, :], dtype=np.float32)
-        except:
-            print("Error with the data selection")
-            sys.exit(1)
-
-    def store_data_to_hdf5(self, h5filename, data, dataname):
-        """
-        Store data in a HDF5 file with the name dataname
-        """
-        with h5py.File(h5filename, "a") as w:
-            w[dataname] = data
-            w.flush()
-
-    def get_total_number_of_frames(self, h5filename, datanames):
-        """
-        Get number of total conformations from HDF5 file
-        """
-        with h5py.File(h5filename) as f:
-            return f[datanames[0]].shape[0]
-
-    def spe(self, rc, cycles=10000, ndim=2, frequency=0):
+    def _spe(self, X):
         """
         The Unrolr (pSPE + dihedral distance) method itself !
         """
-        learning_rate = 1.0
-        alpha = float(learning_rate - 0.01) / float(cycles)
-        dihedral = self.dihedral
-        # output = "spe_trajectory.h5"
+        alpha = self.learning_rate - 0.01 / float(self.n_iter)
 
         # Create context and queue
         ctx = cl.create_some_context()
@@ -127,7 +81,7 @@ class Unrolr():
 
         # Compile kernel
         program = cl.Program(ctx, """
-        __kernel void dihedral_distances(__global const float* a, __global float* r, int x, int size)
+        __kernel void dihedral_distance(__global const float* a, __global float* r, int x, int size)
             {
                 int i = get_global_id(0);
                 float tmp;
@@ -143,7 +97,7 @@ class Unrolr():
                 r[i] = sqrt(tmp);
             }
 
-        __kernel void euclidean_distances(__global const float* a, __global float* r, int x, int size, int ndim)
+        __kernel void euclidean_distance(__global const float* a, __global float* r, int x, int size, int ndim)
             {
                 int i = get_global_id(0);
 
@@ -175,79 +129,55 @@ class Unrolr():
         """).build()
 
         # Send dihedral angles to CPU/GPU
-        dihe_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=dihedral)
+        X_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=X)
 
         # Allocate space on CPU/GPU to store rij and dij
-        tmp = np.zeros((dihedral.shape[0],), dtype=np.float32)
+        tmp = np.zeros((X.shape[0],), dtype=np.float32)
         rij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, tmp.nbytes)
         dij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, tmp.nbytes)
 
         # Generate initial (random)
-        d = np.float32(np.random.rand(ndim, dihedral.shape[0]))
-        # Send initial (random) configuration to the CPU/GPU
+        d = np.float32(np.random.rand(self.n_components, X.shape[0]))
+        # Send initial (random) embedding to the CPU/GPU
         d_buf = cl.Buffer(ctx, cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR, hostbuf=d)
 
-        """
-        # If frequency superior at 0, we open a HDF5
-        if frequency > 0:
-            # Open HDF5 file
-            f = h5py.File(output)
-            # Store initial (random) configuration to HDF5
-            store_data_to_hdf5(output, d.T, "trajectory/frame_%010d" % 0)
-        """
+        freq_progression = self.n_iter / 100.
 
-        freq_progression = cycles / 100.
-
-        for i in xrange(0, cycles + 1):
+        for i in xrange(0, self.n_iter + 1):
 
             if i % freq_progression == 0:
-                percentage = float(i) / float(cycles) * 100.
-                sys.stdout.write("\rSPE Optimization         : %8.3f %%" % percentage)
+                percentage = float(i) / float(self.n_iter) * 100.
+                sys.stdout.write("\rUnrolr Optimization         : %8.3f %%" % percentage)
                 sys.stdout.flush()
 
-            # Choose random configuration (pivot)
-            x = np.int32(np.random.randint(dihedral.shape[0]))
+            # Choose random embedding (pivot)
+            pivot = np.int32(np.random.randint(X.shape[0]))
 
             # Compute dihedral distances
-            program.dihedral_distances(queue, (dihedral.shape[0],), None, dihe_buf, rij_buf,
-                                       x, np.int32(dihedral.shape[1])).wait()
+            program.dihedral_distance(queue, (X.shape[0],), None, X_buf, rij_buf, 
+                                      pivot, np.int32(X.shape[1])).wait()
             # Compute euclidean distances
-            program.euclidean_distances(queue, (d.shape[1],), None, d_buf, dij_buf, x,
-                                        np.int32(d.shape[1]), np.int32(d.shape[0])).wait()
+            program.euclidean_distance(queue, (d.shape[1],), None, d_buf, 
+                                       dij_buf, pivot, np.int32(d.shape[1]), 
+                                       np.int32(d.shape[0])).wait()
             # Stochastic Proximity Embbeding
-            program.spe(queue, d.shape, None, rij_buf, dij_buf, d_buf, x, np.int32(d.shape[1]),
-                        np.float32(rc), np.float32(learning_rate)).wait()
+            program.spe(queue, d.shape, None, rij_buf, dij_buf, d_buf, pivot, 
+                        np.int32(d.shape[1]), np.float32(self.r_neighbors), 
+                        np.float32(self.learning_rate)).wait()
 
-            learning_rate -= alpha
+            self.learning_rate -= alpha
 
-            """
-            if (frequency > 0) and (i % frequency == 0) and (i > 0):
-                # Get the current configuration
-                cl.enqueue_copy(queue, d, d_buf)
-                # Store current configuration to HDF5 file
-                store_data_to_hdf5(output, d.T, "trajectory/frame_%010d" % i)
-            """
-
-        """
-        # At the end, we close the HDF5 file
-        if frequency > 0:
-            f.close()
-        """
-
-        # Get the last configuration d
+        # Get the last embedding d
         cl.enqueue_copy(queue, d, d_buf)
 
         print()
 
-        self.configuration = d
+        self.embedding = d
 
-    def evaluate_embedding(self, rc, epsilon=1e-5):
+    def _evaluate_embedding(self, X):
         """
-        Dirty function to evaluate the final configuration
+        Dirty function to evaluate the final embedding
         """
-        # Shortcut
-        configuration = self.configuration
-        dihedral = self.dihedral
 
         # Creation du contexte et de la queue
         ctx = cl.create_some_context()
@@ -255,7 +185,7 @@ class Unrolr():
 
         # On compile le kernel
         program = cl.Program(ctx, """
-        __kernel void dihedral_distances(__global const float* a, __global float* r, int x, int size)
+        __kernel void dihedral_distance(__global const float* a, __global float* r, int x, int size)
             {
                 int i = get_global_id(0);
                 float tmp;
@@ -271,7 +201,7 @@ class Unrolr():
                 r[i] = sqrt(tmp);
             }
 
-        __kernel void euclidean_distances(__global const float* a, __global float* r, int x, int size, int ndim)
+        __kernel void euclidean_distance(__global const float* a, __global float* r, int x, int size, int ndim)
             {
                 int i = get_global_id(0);
 
@@ -298,17 +228,17 @@ class Unrolr():
             }
         """).build()
 
-        # Send dihedral angles and configuration on CPU/GPU
-        config_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=configuration)
-        dihe_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=dihedral)
+        # Send dihedral angles and embedding on CPU/GPU
+        e_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=self.embedding)
+        X_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=X)
 
         # Allocate memory
-        rij = np.zeros((dihedral.shape[0],), dtype=np.float32)
-        dij = np.zeros((dihedral.shape[0],), dtype=np.float32)
+        rij = np.zeros((X.shape[0],), dtype=np.float32)
+        dij = np.zeros((X.shape[0],), dtype=np.float32)
         rij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, rij.nbytes)
         dij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, dij.nbytes)
 
-        sij = np.zeros((dihedral.shape[0],), dtype=np.float32)
+        sij = np.zeros((X.shape[0],), dtype=np.float32)
         sij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, sij.nbytes)
 
         tmp_correl = []
@@ -321,18 +251,18 @@ class Unrolr():
         while True:
 
             # Choose random conformation as pivot
-            x = np.int32(np.random.randint(dihedral.shape[0]))
+            pivot = np.int32(np.random.randint(X.shape[0]))
 
             # Dihedral distances
-            program.dihedral_distances(queue, (dihedral.shape[0],), None, dihe_buf, rij_buf,
-                                       x, np.int32(dihedral.shape[1])).wait()
+            program.dihedral_distances(queue, (X.shape[0],), None, X_buf, rij_buf,
+                                       pivot, np.int32(X.shape[1])).wait()
             # Euclidean distances
-            program.euclidean_distances(queue, (configuration.shape[1],), None, config_buf,
-                                        dij_buf, x, np.int32(configuration.shape[1]),
-                                        np.int32(configuration.shape[0])).wait()
+            program.euclidean_distances(queue, (self.embedding.shape[1],), None, e_buf,
+                                        dij_buf, pivot, np.int32(self.embedding.shape[1]),
+                                        np.int32(self.embedding.shape[0])).wait()
             # Compute part of stress
-            program.stress(queue, (dihedral.shape[0],), None, rij_buf, dij_buf, sij_buf,
-                           np.float32(rc)).wait()
+            program.stress(queue, (X.shape[0],), None, rij_buf, dij_buf, sij_buf,
+                           np.float32(self.r_neighbors)).wait()
 
             # Get rij, dij and sij
             cl.enqueue_copy(queue, rij, rij_buf)
@@ -350,7 +280,7 @@ class Unrolr():
             stress = tmp_sij_sum / tmp_dij_sum
 
             # Test for convergence
-            if (np.abs(old_stress - stress) < epsilon) and (np.abs(old_correl - correl) < epsilon):
+            if (np.abs(old_stress - stress) < self.epsilon) and (np.abs(old_correl - correl) < self.epsilon):
                 self.correlation = correl
                 self.stress = stress
 
@@ -359,140 +289,86 @@ class Unrolr():
                 old_stress = stress
                 old_correl = correl
 
-    def fit(self, rc, cycles=10000, ndim=2, frequency=0, random_seed=None):
+    def fit(self, X):
         """
         Run the Unrolr (pSPE + didhedral distance) method
         """
-        # Save some variables
-        self.rc = rc
-        self.cycles = cycles
-        self.ndim = ndim
-
-        # Set numpy random state
-        self.random_seed = self.set_random_state(random_seed)
-
         # Fire off SPE calculation !!
-        self.spe(rc, cycles, ndim, frequency)
+        self._spe(X)
         # Evaluation embedding
-        self.evaluate_embedding(rc, epsilon=1e-5)
+        self._evaluate_embedding(X)
 
-        # Add frame idx to configuration
-        self.configuration = np.column_stack((self.frames, self.configuration.T))
-
-    def backup_directory(self, dir_name):
-        """
-        Backup the old directory
-        """
-        if os.path.isdir(dir_name):
-            count = 1
-            exist = True
-
-            while exist:
-                if os.path.isdir(dir_name + "#%d" % (count)):
-                    count += 1
-                else:
-                    os.rename(dir_name, dir_name + "#%d" % (count))
-                    exist = False
-        else:
-            pass
-
-    def create_new_directory(self, dir_name):
-        """
-        Create a new directory and backup the old one if necessary
-        """
-        if os.path.exists(dir_name):
-            self.backup_directory(dir_name)
-
-        os.makedirs(dir_name)
-
-    def save(self, dir_output="."):
+    def save(self, fname, frames=None):
         """
         Save all the data
         """
-        # Create directory and backup old directory
-        dir_str = "spe_%s_%s_c_%s_rc_%s_d_%s"
-        dir_name = dir_str % (self.dihedral.shape[0], "_".join(self.dihe_type),
-                              self.cycles, self.rc, self.ndim)
-        self.create_new_directory("%s/%s" % (dir_output, dir_name))
+        # Add frame idx to embedding
+        if frames is not None:
+            self.embedding = np.column_stack((frames, self.embedding.T))
 
-        # Save final configuration to txt file
-        txt_name = "%s/%s/configuration.txt" % (dir_output, dir_name)
-        header = "seed %s cycle %s rc %s stress %s corr %s"
-        fmt = "%010d" + (self.ndim * "%10.5f")
-        np.savetxt(txt_name, self.configuration, fmt=fmt, header=header % (self.random_seed,
-                   self.cycles, self.rc, self.stress, self.correlation))
+        # Create header and format
+        header = "r_neighbors %s n_iter %s" %(self.r_neighbors, self.n_iter)
+        header += " stress %s correlation %s" % (self.stress, self.correlation)
+        header += " seed %s" % self.random_seed
+        fmt = "%010d" + (self.n_components * "%10.5f")
+
+        # Save final embedding to txt file
+        np.savetxt(fname, self.embedding, fmt=fmt, delimiter=',', header=header)
 
 
-def parse_options():
-    parser = argparse.ArgumentParser(description="SPE python script")
-    parser.add_argument("-d", "--h5", dest="hdf5filename", required=True,
+def main():
+
+    parser = argparse.ArgumentParser(description="Unrolr")
+    parser.add_argument("-f", "--dihedral", dest="fname", required=True,
                         action="store", type=str,
                         help="HDF5 file with dihedral angles")
-    parser.add_argument("-c", "--cycles", dest="cycles",
-                        action="store", type=int, default=1000,
-                        help="number of cycle")
-    parser.add_argument("-t", "--dihedral", dest="dihedral_type",
-                        action="store", type=str, nargs="+",
-                        choices=["ca", "phi", "psi"],
-                        default="ca", help="dihedral type")
-    parser.add_argument("-r", "--rc", dest="rc",
+    parser.add_argument("-r", "--rc", dest="r_neighbors",
                         action="store", type=float, default=1.,
                         help="neighborhood cutoff")
-    parser.add_argument("-n", "--ndim", dest="ndim",
+    parser.add_argument("-n", "--ndim", dest="n_components",
                         action="store", type=int, default=2,
                         help="number of dimension")
-    parser.add_argument("--run", dest="runs",
-                        action="store", type=int, default=1,
-                        help="number of spe runs")
+    parser.add_argument("-c", "--cycles", dest="n_iter",
+                        action="store", type=int, default=1000,
+                        help="number of cycle")
     parser.add_argument("--start", dest="start",
                         action="store", type=int, default=0,
                         help="used frames from this position")
     parser.add_argument("--stop", dest="stop",
                         action="store", type=int, default=-1,
                         help="used frames until this position")
-    parser.add_argument("-i", "--interval", dest="interval",
+    parser.add_argument("-skip", "--skip", dest="skip",
                         action="store", type=int, default=1,
                         help="used frames at this interval")
     parser.add_argument("-o", "--output", dest="output",
-                        action="store", type=str, default=".",
-                        help="directory output")
-    parser.add_argument("-f", "--frequency", dest="frequency",
-                        action="store", type=int, default=0,
-                        help="trajectory saving interval (0 if you don\"t want)")
+                        action="store", type=str, default="embedding.csv",
+                        help="output csv file")
     parser.add_argument("-s", "--seed", dest="random_seed",
                         action="store", type=int, default=None,
                         help="If you want to reproduce spe trajectory")
 
-    return parser.parse_args()
+    options = parser.parse_args()
 
-
-def main():
-
-    options = parse_options()
-
-    dihe_file = options.hdf5filename
-    cycles = options.cycles
-    rc = options.rc
-    ndim = options.ndim
-    runs = options.runs
+    fname = options.fname
+    n_iter = options.n_iter
+    r_neighbors = options.r_neighbors
+    n_components = options.n_components
     start = options.start
     stop = options.stop
-    interval = options.interval
+    skip = options.skip
     output = options.output
-    frequency = options.frequency
     random_seed = options.random_seed
-    dihe_type = options.dihedral_type
 
-    U = Unrolr(dihe_file, dihe_type, start, stop, interval)
+    X = read_dataset(fname, "dihedral_angles", start, stop, skip)
 
-    for i in xrange(runs):
+    U = Unrolr(r_neighbors, n_components, n_iter, random_seed)
+    U.fit(X)
 
-        U.fit(rc, cycles, ndim, frequency, random_seed)
-        print("Random seed              : %8d" % U.random_seed)
-        print("Stress                   : %8.3f" % U.stress)
-        print("Correlation              : %8.3f" % U.correlation)
+    print("Random seed              : %8d" % U.random_seed)
+    print("Stress                   : %8.3f" % U.stress)
+    print("Correlation              : %8.3f" % U.correlation)
 
-        U.save(output)
+    U.save(output)
 
 if __name__ == "__main__":
     main()
