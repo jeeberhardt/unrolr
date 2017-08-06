@@ -19,6 +19,7 @@ import h5py
 import numpy as np
 from MDAnalysis import Universe, collection, Timeseries
 
+sys.path.append('../utils')
 from ..utils import save_dataset
 
 __author__ = "Jérôme Eberhardt"
@@ -35,14 +36,14 @@ def identify_groups_of_continuous_numbers(data):
         groups.append(map(itemgetter(1), g))
     return groups
 
-def calpha_dihedrals(top_file, trj_files, selection='protein', start=0, stop=-1, skip=1):
+def calpha_dihedrals(top_file, trj_files, selection='backbone', start=0, stop=-1, skip=1):
 
     data = None
 
-    for dcd in dcd_files:
+    for trj in trj_files:
 
         # Open trajectory file
-        u = Universe(top_file, dcd)
+        u = Universe(top_file, trj)
 
         # Get only the selected part
         s_all = u.select_atoms(selection)
@@ -75,23 +76,23 @@ def calpha_dihedrals(top_file, trj_files, selection='protein', start=0, stop=-1,
                         collection.addTimeseries(Timeseries.Dihedral(dihedral))
 
             # Iterate through trajectory and compute (see docs for start/stop/skip options)
-            collection.compute(trj=u.trajectory, start, stop, skip)
+            collection.compute(u.trajectory, start, stop, skip)
 
-            if data:
-                data = np.concatenate((data, collection.data))
+            if data is not None:
+                data = np.concatenate((data, collection.data.T))
             else:
-                data = collection.data
+                data = collection.data.T
 
     return data
 
-def backbone_dihedrals(top_file, trj_files, selection='protein', start=0, stop=-1, skip=1):
+def backbone_dihedrals(top_file, trj_files, selection='bakcbone', start=0, stop=-1, skip=1):
 
     data = None
 
-    for dcd in dcd_files:
+    for trj in trj_files:
 
         # Open trajectory file
-        u = Universe(top_file, dcd)
+        u = Universe(top_file, trj)
 
         # Get only the selected part
         s_all = u.select_atoms(selection)
@@ -108,7 +109,7 @@ def backbone_dihedrals(top_file, trj_files, selection='protein', start=0, stop=-
             # Get list of selected residus from segid
             residues = np.unique(s_seg.resnums)
 
-            for residu in residues[2:-1]:
+            for residu in residues[2:-2]:
                 phi = s_seg.residues[residu].phi_selection()
                 psi = s_seg.residues[residu].psi_selection()
 
@@ -116,12 +117,12 @@ def backbone_dihedrals(top_file, trj_files, selection='protein', start=0, stop=-
                 collection.addTimeseries(Timeseries.Dihedral(psi))
 
             # Iterate through trajectory and compute (see docs for start/stop/skip options)
-            collection.compute(trj=u.trajectory, start, stop, skip)
+            collection.compute(u.trajectory, start, stop, skip)
 
-            if data:
-                data = np.concatenate((data, collection.data))
+            if data is not None:
+                data = np.concatenate((data, collection.data.T))
             else:
-                data = collection.data
+                data = collection.data.T
 
     return data
 
@@ -136,10 +137,10 @@ def main():
                         action="store", type=str, nargs="+",
                         help="list of trj files")
     parser.add_argument("-s", "--selection", dest="selection",
-                        default='protein', action="store", type=str,
+                        action="store", type=str,
                         default="backbone", help="residu selection")
     parser.add_argument("-d", "--dihedral", dest="dihedral_type",
-                        action="store", type=str, nargs="+", choices=["calpha", "backbone"],
+                        action="store", type=str, choices=['calpha', 'backbone'],
                         default="calpha", help="dihedral type")
     parser.add_argument("-o" "--output", dest="output",
                         action="store", type=str, default="dihedral_angles.h5",
@@ -157,7 +158,7 @@ def main():
     else:
         data = backbone_dihedrals(top_file, trj_files, selection)
 
-    save_dataset(output, data)
+    save_dataset(output, dihedral_type, data)
 
 if __name__ == '__main__':
     main()
