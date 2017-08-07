@@ -316,10 +316,10 @@ class Unrolr():
         header = "r_neighbors %s n_iter %s" %(self.r_neighbors, self.n_iter)
         header += " stress %s correlation %s" % (self.stress, self.correlation)
         header += " seed %s" % self.random_seed
-        fmt = "%010d" + (self.n_components * "%10.5f")
+        fmt = "%010d" + (self.n_components * ",%.5f")
 
         # Save final embedding to txt file
-        np.savetxt(fname, self.embedding, fmt=fmt, delimiter=',', header=header)
+        np.savetxt(fname, self.embedding, fmt=fmt, header=header)
 
 
 def main():
