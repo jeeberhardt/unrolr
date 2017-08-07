@@ -38,6 +38,9 @@ def calpha_dihedrals(top_file, trj_files, selection='backbone', start=0, stop=-1
 
     data = None
 
+    if not isinstance(trj_files, (list, tuple)):
+        trj_files = [trj_files]
+
     for trj in trj_files:
 
         # Open trajectory file
