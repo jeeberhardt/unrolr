@@ -9,12 +9,6 @@
 #
 # License: MIT
 
-from __future__ import print_function
-
-import os
-import sys
-import argparse
-
 import numpy as np
 import pandas as pd
 
@@ -26,7 +20,7 @@ def find_optimal_r_neighbor(X, r_parameters, n_components=2, n_iter=5000, n_runs
     columns = ["run", "r_neighbor", "n_iter", "stress", "correlation"]
     df = pd.DataFrame(np.nan, index=[0], columns=columns)
 
-    r_neighbors = np.arange(r_parameters[0], r_parameters[1])
+    r_neighbors = np.arange(r_parameters[0], r_parameters[1]+r_parameters[2], r_parameters[2])
 
     for r_neighbor in r_neighbors:
         for i in range(n_runs):
@@ -34,7 +28,7 @@ def find_optimal_r_neighbor(X, r_parameters, n_components=2, n_iter=5000, n_runs
             U = Unrolr(r_neighbor, n_components, n_iter)
             U.fit(X)
 
-            df.loc[idx] = [i+1, r, n_iter, U.stress, U.correlation]
+            df.loc[idx] = [i+1, r_neighbor, n_iter, U.stress, U.correlation]
             idx += 1
 
     # There is no consensus yet on how to find the optimal
@@ -54,7 +48,7 @@ def find_optimal_n_iter(X, n_iters, r_neighbor, n_components=2, n_runs=5):
             U = Unrolr(r_neighbor, n_components, n_iter)
             U.fit(X)
 
-            df.loc[idx] = [i+1, rc, n_iter, U.stress, U.correlation]
+            df.loc[idx] = [i+1, r_neighbor, n_iter, U.stress, U.correlation]
             idx += 1
 
     # For the moment, there is not optimization. So this function
