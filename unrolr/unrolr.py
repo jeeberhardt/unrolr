@@ -32,7 +32,7 @@ __email__ = "qksoneo@gmail.com"
 
 class Unrolr():
 
-    def __init__(self, r_neighbor, n_components=2, n_iter=10000, random_seed=None):
+    def __init__(self, r_neighbor, n_components=2, n_iter=10000, random_seed=None, verbose=0):
 
         # Check PYOPENCL_CTX environnment variable
         if not self._check_environnment_variable("PYOPENCL_CTX"):
@@ -46,8 +46,9 @@ class Unrolr():
         self.learning_rate = 1.0
         self.epsilon = 1e-4
 
-        # Set numpy random state
+        # Set numpy random state and verbose
         self.random_seed = self._set_random_state(random_seed)
+        self.verbose = verbose
 
         self.embedding = None
         self.stress = None
@@ -145,11 +146,12 @@ class Unrolr():
         # Send initial (random) embedding to the CPU/GPU
         d_buf = cl.Buffer(ctx, cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR, hostbuf=d)
 
-        freq_progression = self.n_iter / 100.
+        if verbose:
+            freq_progression = self.n_iter / 100.
 
         for i in xrange(0, self.n_iter + 1):
 
-            if i % freq_progression == 0:
+            if i % freq_progression == 0 and verbose:
                 percentage = float(i) / float(self.n_iter) * 100.
                 sys.stdout.write("\rUnrolr Optimization         : %8.3f %%" % percentage)
                 sys.stdout.flush()
@@ -174,7 +176,8 @@ class Unrolr():
         # Get the last embedding d
         cl.enqueue_copy(queue, d, d_buf)
 
-        print()
+        if verbose:
+            print()
 
         self.embedding = d
 
@@ -307,19 +310,26 @@ class Unrolr():
         # Evaluation embedding
         self._evaluate_embedding(X)
 
+        # Transpose embedding
+        self.embedding = self.embedding.T
+
     def save(self, fname='embedding.csv', frames=None):
         """
         Save all the data
         """
-        # Add frame idx to embedding
+
+        fmt = ''
+
         if frames is not None:
-            self.embedding = np.column_stack((frames, self.embedding.T))
+            # Add frame idx to embedding
+            self.embedding = np.column_stack((frames, self.embedding))
+            fmt = "%012d,"
 
         # Create header and format
         header = "r_neighbor %s n_iter %s" %(self.r_neighbor, self.n_iter)
         header += " stress %s correlation %s" % (self.stress, self.correlation)
         header += " seed %s" % self.random_seed
-        fmt = "%010d" + (self.n_components * ",%.5f")
+        fmt += "%.5f" + (self.n_components - 1) * ",%.5f"
 
         # Save final embedding to txt file
         np.savetxt(fname, self.embedding, fmt=fmt, header=header)
@@ -370,7 +380,7 @@ def main():
 
     X = read_dataset(fname, "dihedral_angles", start, stop, skip)
 
-    U = Unrolr(r_neighbor, n_components, n_iter, random_seed)
+    U = Unrolr(r_neighbor, n_components, n_iter, random_seed, verbose=1)
     U.fit(X)
 
     print("Random seed              : %8d" % U.random_seed)
