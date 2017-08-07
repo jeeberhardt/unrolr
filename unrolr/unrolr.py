@@ -146,12 +146,11 @@ class Unrolr():
         # Send initial (random) embedding to the CPU/GPU
         d_buf = cl.Buffer(ctx, cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR, hostbuf=d)
 
-        if verbose:
-            freq_progression = self.n_iter / 100.
+        freq_progression = self.n_iter / 100.
 
         for i in xrange(0, self.n_iter + 1):
 
-            if i % freq_progression == 0 and verbose:
+            if i % freq_progression == 0 and self.verbose:
                 percentage = float(i) / float(self.n_iter) * 100.
                 sys.stdout.write("\rUnrolr Optimization         : %8.3f %%" % percentage)
                 sys.stdout.flush()
@@ -176,7 +175,7 @@ class Unrolr():
         # Get the last embedding d
         cl.enqueue_copy(queue, d, d_buf)
 
-        if verbose:
+        if self.verbose:
             print()
 
         self.embedding = d
