@@ -28,9 +28,9 @@ def read_dataset(fname, dname, start=0, stop=-1, skip=1):
     try:
         with h5py.File(fname, 'r') as f:
             if stop == -1:
-                return np.ascontiguousarray(f[dname][start::skip,], dtype=np.float32)
+                return f[dname][start::skip,]
             else:
-                return np.ascontiguousarray(f[dname][start:stop:skip,], dtype=np.float32)
+                return f[dname][start:stop:skip,]
     except IOError:
         print("Error: cannot find file %s" % fname)
 

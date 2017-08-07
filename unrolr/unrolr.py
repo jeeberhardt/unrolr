@@ -44,7 +44,7 @@ class Unrolr():
         self.r_neighbor = r_neighbor
         self.n_iter = n_iter
         self.learning_rate = 1.0
-        self.epsilon = 1e-3
+        self.epsilon = 1e-4
 
         # Set numpy random state
         self.random_seed = self._set_random_state(random_seed)
@@ -299,12 +299,15 @@ class Unrolr():
         """
         Run the Unrolr (pSPE + didhedral distance) method
         """
+        # To be sure X is a single array
+        X = np.ascontiguousarray(X, dtype=np.float32)
+
         # Fire off SPE calculation !!
         self._spe(X)
         # Evaluation embedding
         self._evaluate_embedding(X)
 
-    def save(self, fname, frames=None):
+    def save(self, fname='embedding.csv', frames=None):
         """
         Save all the data
         """
