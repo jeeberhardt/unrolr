@@ -25,11 +25,15 @@ def read_dataset(fname, dname, start=0, stop=-1, skip=1):
 
     data = None
 
-    with h5py.File(fname, 'r') as f:
-        if stop == -1:
-            return np.ascontiguousarray(f[dname][start::skip,], dtype=np.float32)
-        else:
-            return np.ascontiguousarray(f[dname][start:stop:skip,], dtype=np.float32)
+    try:
+        with h5py.File(fname, 'r') as f:
+            if stop == -1:
+                return np.ascontiguousarray(f[dname][start::skip,], dtype=np.float32)
+            else:
+                return np.ascontiguousarray(f[dname][start:stop:skip,], dtype=np.float32)
+    except IOError:
+        print("Error: cannot find file %s" % fname)
+
     return data
 
 def save_dataset(fname, dname, data):
