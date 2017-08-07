@@ -8,7 +8,7 @@
 # License: MIT
 
 
-from .optimize import r_neighbor
-from .optimize import n_iter
+from .optimize import find_optimal_r_neighbor
+from .optimize import find_opitmal_n_iter
 
 __all__ = ['r_neighbor', 'n_iter']
