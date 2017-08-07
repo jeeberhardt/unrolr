@@ -9,6 +9,6 @@
 
 
 from .optimize import find_optimal_r_neighbor
-from .optimize import find_opitmal_n_iter
+from .optimize import find_optimal_n_iter
 
-__all__ = ['r_neighbor', 'n_iter']
+__all__ = ['find_optimal_r_neighbor', 'find_optimal_n_iter']
