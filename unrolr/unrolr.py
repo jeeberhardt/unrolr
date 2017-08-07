@@ -32,7 +32,7 @@ __email__ = "qksoneo@gmail.com"
 
 class Unrolr():
 
-    def __init__(self, r_neighbors, n_components=2, n_iter=10000, random_seed=None):
+    def __init__(self, r_neighbor, n_components=2, n_iter=10000, random_seed=None):
 
         # Check PYOPENCL_CTX environnment variable
         if not self._check_environnment_variable("PYOPENCL_CTX"):
@@ -41,7 +41,7 @@ class Unrolr():
             sys.exit(1)
 
         self.n_components = n_components
-        self.r_neighbors = r_neighbors
+        self.r_neighbor = r_neighbor
         self.n_iter = n_iter
         self.learning_rate = 1.0
         self.epsilon = 1e-3
@@ -166,7 +166,7 @@ class Unrolr():
                                        np.int32(d.shape[0])).wait()
             # Stochastic Proximity Embbeding
             program.spe(queue, d.shape, None, rij_buf, dij_buf, d_buf, pivot, 
-                        np.int32(d.shape[1]), np.float32(self.r_neighbors), 
+                        np.int32(d.shape[1]), np.float32(self.r_neighbor), 
                         np.float32(self.learning_rate)).wait()
 
             self.learning_rate -= alpha
@@ -183,7 +183,7 @@ class Unrolr():
         Dirty function to evaluate the final embedding
         """
         embedding = self.embedding
-        r_neighbors = self.r_neighbors
+        r_neighbor = self.r_neighbor
 
         # Creation du contexte et de la queue
         ctx = cl.create_some_context()
@@ -268,7 +268,7 @@ class Unrolr():
                                         np.int32(embedding.shape[0])).wait()
             # Compute part of stress
             program.stress(queue, (X.shape[0],), None, rij_buf, dij_buf, sij_buf,
-                           np.float32(r_neighbors)).wait()
+                           np.float32(r_neighbor)).wait()
 
             # Get rij, dij and sij
             cl.enqueue_copy(queue, rij, rij_buf)
@@ -313,7 +313,7 @@ class Unrolr():
             self.embedding = np.column_stack((frames, self.embedding.T))
 
         # Create header and format
-        header = "r_neighbors %s n_iter %s" %(self.r_neighbors, self.n_iter)
+        header = "r_neighbor %s n_iter %s" %(self.r_neighbor, self.n_iter)
         header += " stress %s correlation %s" % (self.stress, self.correlation)
         header += " seed %s" % self.random_seed
         fmt = "%010d" + (self.n_components * ",%.5f")
@@ -328,7 +328,7 @@ def main():
     parser.add_argument("-f", "--dihedral", dest="fname", required=True,
                         action="store", type=str,
                         help="HDF5 file with dihedral angles")
-    parser.add_argument("-r", "--rc", dest="r_neighbors",
+    parser.add_argument("-r", "--rc", dest="r_neighbor",
                         action="store", type=float, default=1.,
                         help="neighborhood cutoff")
     parser.add_argument("-n", "--ndim", dest="n_components",
@@ -357,7 +357,7 @@ def main():
 
     fname = options.fname
     n_iter = options.n_iter
-    r_neighbors = options.r_neighbors
+    r_neighbor = options.r_neighbor
     n_components = options.n_components
     start = options.start
     stop = options.stop
@@ -367,7 +367,7 @@ def main():
 
     X = read_dataset(fname, "dihedral_angles", start, stop, skip)
 
-    U = Unrolr(r_neighbors, n_components, n_iter, random_seed)
+    U = Unrolr(r_neighbor, n_components, n_iter, random_seed)
     U.fit(X)
 
     print("Random seed              : %8d" % U.random_seed)
