@@ -77,7 +77,7 @@ class Unrolr():
         """
         The Unrolr (pSPE + dihedral distance) method itself !
         """
-        alpha = self.learning_rate - 0.01 / float(self.n_iter)
+        alpha = self.learning_rate / float(self.n_iter)
 
         # Create context and queue
         ctx = cl.create_some_context()
@@ -285,10 +285,6 @@ class Unrolr():
             tmp_dij_sum += np.sum(dij)
             stress = tmp_sij_sum / tmp_dij_sum
 
-            sys.stdout.write("%s %s\n" % (old_stress, stress))
-            sys.stdout.write("%s %s\n" % (old_correl, correl))
-            sys.stdout.flush()
-
             # Test for convergence
             if (np.abs(old_stress - stress) < self.epsilon) and (np.abs(old_correl - correl) < self.epsilon):
                 self.correlation = correl
@@ -305,7 +301,6 @@ class Unrolr():
         """
         # Fire off SPE calculation !!
         self._spe(X)
-        print(self.embedding)
         # Evaluation embedding
         self._evaluate_embedding(X)
 
