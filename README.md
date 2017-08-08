@@ -1,34 +1,34 @@
 [![DOI](https://zenodo.org/badge/59756594.svg)](https://zenodo.org/badge/latestdoi/59756594)
 
 # Unrolr
-Conformational clustering of MD trajectories using (pivot-based) Stochastic Proximity Embedding with dihedral angles
+Conformational analysis of MD trajectories using (pivot-based) Stochastic Proximity Embedding with dihedral angles
 
 ## Prerequisites
 
 You need, at a minimum (requirements.txt):
 
-* Python 2.7 (only for the moment)
+* Python 2.7
 * NumPy
 * H5py
 * Pandas
 * Matplotlib
 * PyOpenCL
-* MDAnalysis
+* MDAnalysis (==0.15)
 
 ## Installation on UNIX
 
 I highly recommand you to install the Anaconda distribution (https://www.continuum.io/downloads) if you want a clean python environnment with nearly all the prerequisites already installed (NumPy, H5py, Pandas, Matplotlib).
 
-1 . First, you have to install OpenCL. Good news for MacOS users, you don't have to install OpenCL, it works out-of-the-box, so you can skip this part and just install PyOpenCL and MDAanalysis. For others, from all the tutorials you can find on the internet, this one it is still the more succinct one that I found: [OpenCL installation](https://ethereum.gitbooks.io/frontier-guide/content/gpu.html).
+1 . First, you have to install OpenCL. Good news for MacOS users, you don't have to install OpenCL, it works out-of-the-box. For others, from all the tutorials you can find on the internet, this one it is still the more succinct one that I found: [OpenCL installation](https://ethereum.gitbooks.io/frontier-guide/content/gpu.html).
 
-2 . For the rest, you just have to do this,
+2 . As a final step, from the local directory
 ```bash
-pip install pyopencl mdanalysis
+pip setup.py install
 ```
 
 ## OpenCL context
 
-Before running the SPE algorithm, you need to define the OpenCL context. And it is a good way to see if everything is working correctly.
+Before running Unrolr, you need to define the OpenCL context. And it is a good way to see if everything is working correctly.
 
 ```bash
 python -c 'import pyopencl as cl; cl.create_some_context()'
@@ -54,76 +54,37 @@ Now you can set the environment variable.
 export PYOPENCL_CTX='0:1'
 ```
 
-## Documentation
+## Example
 
-1 . First you need to extract all the C-alpha (or the Phi/Psi) dihedral angles from your trajectory
-```bash
-python extract_dihedral_angles.py -p topology.psf -d traj.dcd
+```python
+from unrolr import Unrolr
+from unrolr.feature_extraction import calpha_dihedrals
+from unrolr.utils import save_dataset
+
+
+top_file = 'examples/inputs/villin.psf'
+trj_file = 'examples/inputs/villin.dcd'
+
+# Extract all calpha dihedral angles from trajectory and store it into a HDF5 file
+X = calpha_dihedrals(top_file, trj_file)
+save_dataset('dihedral_angles.h5', "dihedral_angles", X)
+
+# Fit X using Unrolr (pSPE + dihedral distance) and save the embedding into a csv file
+U = Unrolr(r_neighbor=0.27, n_iter=50000, verbose=1)
+U.fit(X)
+U.save()
+
+print U.stress, U.correlation
 ```
-**Command line options**
-* -p/--top: topology file (pdb, psf)
-* -d/--dcd: single trajectory or list of trajectories (dcd, xtc)
-* -s/--selection: selection command (ex: resid 1:10)(default: all)(documentation: https://goo.gl/4t1mGb)
-* -t/--dihedral: dihedral types you want to extract (choices: ca, phi, psi)(default: ca)
-* -o/--output: output name (default: dihedral_angles.h5)
-
-**Outputs**
-* HDF5 file with the selected dihedral angles
-
-2 . Find the optimal neighborhood RC value or find the optimal number of cycles, using only a small subset of conformations (only 5000 or 10000) that cover the whole trajectory.
-```bash
-python search_parameters.py -d dihedral_angles.h5 -r 0.1 1.0 0.01 -i 100 # if you want to find the optimal RC value
-python search_parameters.py -d dihedral_angles.h5 -r 0.27 -i 100 # if you want to find the optimal cycle value
-```
-
-**Command line options**
-* -d/--h5: HDF5 file with all the dihedral angles
-* -r/--rc: neighborhood RC value or neighborhood RC range
-* -t/--dihedral: dihedral types you want to use (choices: ca, phi, psi)(default: ca)
-* -n/--ndim: number of dimension (default: 2)
-* --run: number of SPE runs (default: 5)
-* --start: starting frame (default: 0)
-* --stop: last frame (default: -1)
-* -i/--interval: interval (default: 1)
-* -o/--output: output directory (default: .)
-
-**Outputs**
-* configuration file of each spe run (directories of optimized coordinates)
-* stress/correlation in function of rc values (plot and raw data)
-* stress/correlation in function of cycle values (plot and raw data)
-
-3 . And finally, after finding the optimal rc and cycle values you can run the SPE algorithm at its full potential with all the conformations.
-```bash
-python unrolr.py -d dihedral_angles.h5 -c 10000 -r 0.27
-```
-
-**Command line options**
-* -d/--h5: HDF5 file with all the dihedral angles
-* -r/--rc: neighborhood rc value
-* -c/--cycles: number of optimization cycles
-* -t/--dihedral: dihedral types you want to use (choices: ca, phi, psi)(default: ca)
-* -n/--ndim: number of dimension (default: 2)
-* --run: number of SPE runs (default: 1)
-* --start: starting frame (default: 0)
-* --stop: last frame (default: -1)
-* -i/--interval: interval (default: 1)
-* -o/--output: output directory (default: .)
-* ~~-f/--frequency: SPE trajectory saving interval (0 if you don't want)(default: 0)~~
-* -s/--seed: random seed (if you want to reproduce SPE results) (default: None)
-
-**Outputs**
-* configuration file (optimized coordinates)
-* ~~HDF5 file with spe trajectory (if selected)~~
 
 ## Todo list
 - [ ] Improve dihedral distance metric sensibility
 - [ ] Improve OpenCL performance (global/local memory)
 - [ ] Unit tests
-- [ ] Compatibility with python 3
-- [ ] Find a post-doc
+- [ ] Compatibility with python 3 (waiting for MDAnalysis 0.17)
 
 ## Citation
-1. Jérôme Eberhardt, Roland H. Stote, and Annick Dejaegere. (2017) Unrolr: structural clustering of protein conformations using Stochastic Proximity Embedding. (submitted) [![DOI](https://zenodo.org/badge/59756594.svg)](https://zenodo.org/badge/latestdoi/59756594)
+1. Jérôme Eberhardt, Roland H. Stote, and Annick Dejaegere. (2017) Unrolr: structural analysis of protein conformations using Stochastic Proximity Embedding. (submitted)
 
 ## License
 MIT
