@@ -82,6 +82,8 @@ U.save(fname='outputs/embedding.csv')
 
 # Or you can an extra column with frame id (frames=(start, stop, skip))
 # U.save(fname='outputs/embedding.csv', frames=np.arange(0, X.shape[0], 1))
+
+print U.stress, U.correlation
 ```
 
 The final pSPE optimization process takes approximately 13 seconds for 10.000 conformations with 32 pseudo C-alpha dihedral angles and 50.000 cycles on a single (and now old) AMD Radeon HD 7950 GPU. As output, you will find the final optimized configuration, named ```embedding.csv```. Using the tool [visualize](https://github.com/jeeberhardt/visualize), you can now explore easily the conformational space sampled during the MD simulation.
