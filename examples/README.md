@@ -80,7 +80,7 @@ U = Unrolr(r_neighbor=0.27, n_iter=50000, verbose=1)
 U.fit(X)
 U.save(fname='outputs/embedding.csv') 
 
-# Or you can an extra column with frame id (frames=(start, stop, skip))
+# Or you can add an extra column with frame ids (frames=(start, stop, skip))
 # U.save(fname='outputs/embedding.csv', frames=np.arange(0, X.shape[0], 1))
 
 print U.stress, U.correlation
