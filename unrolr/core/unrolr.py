@@ -20,7 +20,7 @@ import h5py
 import numpy as np
 import pyopencl as cl
 
-from .utils import read_dataset
+from ..utils import read_dataset
 
 __author__ = "Jérôme Eberhardt"
 __copyright__ = "Copyright 2016, Jérôme Eberhardt"
