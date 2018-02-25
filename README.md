@@ -89,7 +89,7 @@ print U.stress, U.correlation
 - [ ] Compatibility with the latest version of MDAnalysis
 
 ## Citation
-Jérôme Eberhardt, Roland H. Stote, and Annick Dejaegere. (2018) *Unrolr: structural analysis of protein conformations using Stochastic Proximity Embedding.*
+Jérôme Eberhardt, Roland H. Stote, and Annick Dejaegere. (soon) *Unrolr: structural analysis of protein conformations using Stochastic Proximity Embedding.*
 
 ## License
 MIT
