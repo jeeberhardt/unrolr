@@ -1,7 +1,7 @@
 [![DOI](https://zenodo.org/badge/59756594.svg)](https://zenodo.org/badge/latestdoi/59756594)
 
 # Unrolr
-Conformational analysis of MD trajectories using (pivot-based) Stochastic Proximity Embedding with dihedral angles
+Conformational analysis of MD trajectories based on (pivot-based) Stochastic Proximity Embedding using dihedral distance as a metric. 
 
 ## Prerequisites
 
@@ -19,11 +19,15 @@ You need, at a minimum (requirements.txt):
 
 I highly recommand you to install the Anaconda distribution (https://www.continuum.io/downloads) if you want a clean python environnment with nearly all the prerequisites already installed (NumPy, H5py, Pandas, Matplotlib).
 
-1 . First, you have to install OpenCL. Good news for MacOS users, you don't have to install OpenCL, it works out-of-the-box. For others, from all the tutorials you can find on the internet, this one it is still the more succinct one that I found: [OpenCL installation](https://ethereum.gitbooks.io/frontier-guide/content/gpu.html).
+1 . First, you have to install OpenCL:
+* MacOS: Good news, you don't have to install OpenCL, it works out-of-the-box. 
+* AMD: From all the tutorials you can find on the internet, this one it is still the more succinct one that I found: [AMD OpenCL installation on Ubuntu](https://ethereum.gitbooks.io/frontier-guide/content/gpu.html). 
+* Nvidia: You can either install the [CUDA toolkit](https://developer.nvidia.com/cuda-downloads) or directly the package ```nvidia-opencl-dev```.
+* Intel: And of course it's working also on CPU just by installing this [runtime software package](https://software.intel.com/en-us/articles/opencl-drivers). 
 
 2 . As a final step, from the local directory
 ```bash
-pip setup.py install
+python setup.py install
 ```
 
 ## OpenCL context
@@ -65,7 +69,7 @@ from unrolr.utils import save_dataset
 top_file = 'examples/inputs/villin.psf'
 trj_file = 'examples/inputs/villin.dcd'
 
-# Extract all calpha dihedral angles from trajectory and store it into a HDF5 file
+# Extract all calpha dihedral angles from trajectory and store them into a HDF5 file
 X = calpha_dihedrals(top_file, trj_file)
 save_dataset('dihedral_angles.h5', "dihedral_angles", X)
 
@@ -81,10 +85,11 @@ print U.stress, U.correlation
 - [ ] Improve dihedral distance metric sensibility
 - [ ] Improve OpenCL performance (global/local memory)
 - [ ] Unit tests
-- [ ] Compatibility with python 3 (waiting for MDAnalysis 0.17)
+- [ ] Compatibility with python 3
+- [ ] Compatibility with the latest version of MDAnalysis
 
 ## Citation
-1. Jérôme Eberhardt, Roland H. Stote, and Annick Dejaegere. (2017) Unrolr: structural analysis of protein conformations using Stochastic Proximity Embedding. (submitted)
+Jérôme Eberhardt, Roland H. Stote, and Annick Dejaegere. (2018) *Unrolr: structural analysis of protein conformations using Stochastic Proximity Embedding.*
 
 ## License
 MIT
