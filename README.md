@@ -25,8 +25,25 @@ I highly recommand you to install the Anaconda distribution (https://www.continu
 * Nvidia: You can either install the [CUDA toolkit](https://developer.nvidia.com/cuda-downloads) or directly the package ```nvidia-opencl-dev```.
 * Intel: And of course it's working also on CPU just by installing this [runtime software package](https://software.intel.com/en-us/articles/opencl-drivers). 
 
-2 . As a final step, from the local directory
+2 . As a final step, 
 ```bash
+# Get the package
+wget https://github.com/jeeberhardt/unrolr/archive/master.zip
+unzip unrolr-master.zip
+rm unrolr-master.zip
+cd unrolr-master
+
+# Install the package
+python setup.py install
+```
+
+If somehow pip is having problem to install all the dependencies,
+```bash
+conda config --append channels conda-forge
+conda install pyopencl
+pip install mdanalysis==0.15
+
+# Try again
 python setup.py install
 ```
 
@@ -82,11 +99,12 @@ print U.stress, U.correlation
 ```
 
 ## Todo list
-- [ ] Improve dihedral distance metric sensibility
-- [ ] Improve OpenCL performance (global/local memory)
-- [ ] Unit tests
 - [ ] Compatibility with python 3
 - [ ] Compatibility with the latest version of MDAnalysis
+- [ ] Unit tests
+- [ ] Accessible directly from pip
+- [ ] Improve dihedral distance metric sensibility
+- [ ] Improve OpenCL performance (global/local memory)
 
 ## Citation
 Jérôme Eberhardt, Roland H. Stote, and Annick Dejaegere. (soon) *Unrolr: structural analysis of protein conformations using Stochastic Proximity Embedding.*
