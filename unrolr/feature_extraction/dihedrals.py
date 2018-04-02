@@ -99,8 +99,7 @@ class Dihedral(AnalysisBase):
                     self._atom_ix.extend(list(phi.ix) + list(psi.ix))
 
     def _single_frame(self):
-        positions = self._u.atoms[self._atom_ix].positions.astype(np.float64)
-        self.result.append(dihedral(positions))
+        self.result.append(dihedral(self._u.atoms[self._atom_ix].positions))
 
     def _conclude(self):
         self.result = np.asarray(self.result)
