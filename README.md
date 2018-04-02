@@ -13,7 +13,7 @@ You need, at a minimum (requirements.txt):
 * Pandas
 * Matplotlib
 * PyOpenCL
-* MDAnalysis (==0.15)
+* MDAnalysis (==0.17)
 
 ## Installation on UNIX
 
@@ -79,7 +79,7 @@ export PYOPENCL_CTX='0:1'
 
 ```python
 from unrolr import Unrolr
-from unrolr.feature_extraction import calpha_dihedrals
+from unrolr.feature_extraction import Dihedral
 from unrolr.utils import save_dataset
 
 
@@ -87,7 +87,8 @@ top_file = 'examples/inputs/villin.psf'
 trj_file = 'examples/inputs/villin.dcd'
 
 # Extract all calpha dihedral angles from trajectory and store them into a HDF5 file
-X = calpha_dihedrals(top_file, trj_file)
+d = Dihedral(top_file, trj_file, selection='all', dihedral_type='calpha').run()
+X = d.result
 save_dataset('dihedral_angles.h5', "dihedral_angles", X)
 
 # Fit X using Unrolr (pSPE + dihedral distance) and save the embedding into a csv file
@@ -100,7 +101,7 @@ print U.stress, U.correlation
 
 ## Todo list
 - [ ] Compatibility with python 3
-- [ ] Compatibility with the latest version of MDAnalysis
+- [x] Compatibility with the latest version of MDAnalysis (==0.17)
 - [ ] Unit tests
 - [ ] Accessible directly from pip
 - [ ] Improve dihedral distance metric sensibility
