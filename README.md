@@ -85,15 +85,15 @@ from unrolr.utils import save_dataset
 top_file = 'examples/inputs/villin.psf'
 trj_file = 'examples/inputs/villin.dcd'
 
-# Extract all calpha dihedral angles from trajectory and store them into a HDF5 file
-d = Dihedral(top_file, trj_file, selection='all', dihedral_type='calpha').run()
+# Extract all calpha dihedral angles from trajectory and store them into a HDF5 file (start/stop/step are optional)
+d = Dihedral(top_file, trj_file, selection='all', dihedral_type='calpha', start=0, stop=None, step=1).run()
 X = d.result
 save_dataset('dihedral_angles.h5', "dihedral_angles", X)
 
 # Fit X using Unrolr (pSPE + dihedral distance) and save the embedding into a csv file
 U = Unrolr(r_neighbor=0.27, n_iter=50000, verbose=1)
 U.fit(X)
-U.save()
+U.save(fname='embedding.csv')
 
 print U.stress, U.correlation
 ```
