@@ -40,8 +40,7 @@ python setup.py install
 If somehow pip is having problem to install all the dependencies,
 ```bash
 conda config --append channels conda-forge
-conda install pyopencl
-pip install mdanalysis==0.15
+conda install pyopencl mdanalysis
 
 # Try again
 python setup.py install
