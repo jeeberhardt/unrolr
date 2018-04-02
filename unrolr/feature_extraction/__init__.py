@@ -8,7 +8,6 @@
 # License: MIT
 
 
-from .dihedrals import calpha_dihedrals
-from .dihedrals import backbone_dihedrals
+from .dihedrals import Dihedrals
 
-__all__ = ["calpha_dihedrals", "backbone_dihedrals"]
+__all__ = ["Dihedrals"]

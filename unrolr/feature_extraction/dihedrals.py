@@ -16,116 +16,74 @@ from operator import itemgetter
 
 import h5py
 import numpy as np
-from MDAnalysis import Universe, collection, Timeseries
+from MDAnalysis import Universe
+from MDAnalysis.analysis.base import AnalysisBase
+from MDAnalysis.lib import mdamath
 
 from ..utils import save_dataset
 
 __author__ = "Jérôme Eberhardt"
-__copyright__ = "Copyright 2017, Jérôme Eberhardt"
+__copyright__ = "Copyright 2018, Jérôme Eberhardt"
 
 __lience__ = "MIT"
 __maintainer__ = "Jérôme Eberhardt"
 __email__ = "qksoneo@gmail.com"
 
 
-def identify_groups_of_continuous_numbers(data):
-    groups = []
-    for k, g in groupby(enumerate(data), lambda (i, x): i - x):
-        groups.append(map(itemgetter(1), g))
-    return groups
+class Dihedrals(AnalysisBase):
+    def __init__(self, top_file, trj_files, selection='backbone', dihedral_type='calpha', **kwargs):
+        u = Universe(top_file, trj_files)
+        atomgroup = u.select_atoms(selection)
+        super(Dihedrals, self).__init__(atomgroup.universe.trajectory, **kwargs)
 
-def calpha_dihedrals(top_file, trj_files, selection='backbone', start=0, stop=-1, skip=1):
+        self._ag = atomgroup
+        self._dihedral_type = dihedral_type
 
-    data = None
+    def _prepare(self):
+        self.result = []
+        # Where we will store all the atomgroups for each ca dihedral
+        self._ag_dihedrals = []
 
-    if not isinstance(trj_files, (list, tuple)):
-        trj_files = [trj_files]
-
-    for trj in trj_files:
-
-        # Open trajectory file
-        u = Universe(top_file, trj)
-
-        # Get only the selected part
-        s_all = u.select_atoms(selection)
         # Get list of selected segids
-        segids = np.unique(s_all.segids)
-
-        # Clear collection
-        collection.clear()
+        segids = np.unique(self._ag.segids)
 
         for segid in segids:
-
             # Get only the segid from the selected part
-            s_seg = s_all.select_atoms("segid %s" % segid)
+            s_seg = self._ag.select_atoms("segid %s" % segid)
             # Get list of selected residus from segid
             residues = np.unique(s_seg.resnums)
 
-            # Identify groups of continuous number and group them in sublist (for CA dihedral)
-            fragments = identify_groups_of_continuous_numbers(residues)
+            if self._dihedral_type == 'calpha':
+                # Identify groups of continuous residues and group them in sublist
+                fragments = []
+                for k, g in groupby(enumerate(residues), lambda (i, x): i - x):
+                    fragments.append(map(itemgetter(1), g))
 
-            for fragment in fragments:
-                if len(fragment) >= 4:
-                    for residu in fragment[0:-3]:
+                for fragment in fragments:
+                    if len(fragment) >= 4:
+                        for residu in fragment[0:-3]:
+                            select_str = "(resid %s or resid %s or resid %s or resid %s) and name CA"
+                            select_str = select_str % (residu, residu+1, residu+2, residu+3)
+                            dihedral = s_seg.select_atoms(select_str)
+                            self._ag_dihedrals.append(dihedral)
 
-                        dihedral = s_seg.select_atoms("resid %d and name CA" % residu,
-                                                      "resid %d and name CA" % (residu + 1),
-                                                      "resid %d and name CA" % (residu + 2),
-                                                      "resid %d and name CA" % (residu + 3))
+            elif self._dihedral_type == 'backbone':
+                for residu in residues[2:-2]:
+                    phi = s_seg.residues[residu].phi_selection()
+                    psi = s_seg.residues[residu].psi_selection()
+                    self._ag_dihedrals.extend([phi, psi])
 
-                        # Add dihedral angle to the timeseries
-                        collection.addTimeseries(Timeseries.Dihedral(dihedral))
+    def _single_frame(self):
+        dihedral_angles = []
 
-            # Iterate through trajectory and compute (see docs for start/stop/skip options)
-            collection.compute(u.trajectory, start, stop, skip)
+        for ag_dihedral in self._ag_dihedrals:
+            a, b, c, d = ag_dihedral.atoms.positions.astype(np.float64)
+            dihedral_angles.append(mdamath.dihedral(a-b, b-c, c-d))
 
-            if data is not None:
-                data = np.concatenate((data, collection.data.T))
-            else:
-                data = collection.data.T
+        self.result.append(dihedral_angles)
 
-    return data
-
-def backbone_dihedrals(top_file, trj_files, selection='backbone', start=0, stop=-1, skip=1):
-
-    data = None
-
-    for trj in trj_files:
-
-        # Open trajectory file
-        u = Universe(top_file, trj)
-
-        # Get only the selected part
-        s_all = u.select_atoms(selection)
-        # Get list of selected segids
-        segids = np.unique(s_all.segids)
-
-        # Clear collection
-        collection.clear()
-
-        for segid in segids:
-
-            # Get only the segid from the selected part
-            s_seg = s_all.select_atoms("segid %s" % segid)
-            # Get list of selected residus from segid
-            residues = np.unique(s_seg.resnums)
-
-            for residu in residues[2:-2]:
-                phi = s_seg.residues[residu].phi_selection()
-                psi = s_seg.residues[residu].psi_selection()
-
-                collection.addTimeseries(Timeseries.Dihedral(phi))
-                collection.addTimeseries(Timeseries.Dihedral(psi))
-
-            # Iterate through trajectory and compute (see docs for start/stop/skip options)
-            collection.compute(u.trajectory, start, stop, skip)
-
-            if data is not None:
-                data = np.concatenate((data, collection.data.T))
-            else:
-                data = collection.data.T
-
-    return data
+    def _conclude(self):
+        self.result = np.asarray(self.result)
 
 
 def main():
@@ -154,10 +112,8 @@ def main():
     dihedral_type = options.dihedral_type
     output = options.output
 
-    if dihedral_type == 'calpha':
-        data = calpha_dihedrals(top_file, trj_files, selection)
-    else:
-        data = backbone_dihedrals(top_file, trj_files, selection)
+    d = Dihedrals(top_file, trj_files, selection, dihedral_type).run()
+    data = d.result
 
     save_dataset(output, "dihedral_angles", data)
 
