@@ -18,7 +18,6 @@ import h5py
 import numpy as np
 from MDAnalysis import Universe
 from MDAnalysis.analysis.base import AnalysisBase
-from MDAnalysis.lib import mdamath
 
 from ..utils import save_dataset
 
@@ -30,20 +29,46 @@ __maintainer__ = "Jérôme Eberhardt"
 __email__ = "qksoneo@gmail.com"
 
 
-class Dihedrals(AnalysisBase):
+def dihedral(positions):
+    """ Vectorized version of the dihedral angle function
+    Source: https://stackoverflow.com/questions/20305272/dihedral-torsion-angle-from-four-points-in-cartesian-coordinates-in-python"""
+    
+    b0 = -(positions[1::4] - positions[::4])
+    b1 = positions[2::4] - positions[1::4]
+    b2 = positions[3::4] - positions[2::4]
+
+    # normalize b1 so that it does not influence magnitude of vector
+    # rejections that come next
+    b1 /= np.linalg.norm(b1, axis=1)[:,None]
+
+    # vector rejections
+    # v = projection of b0 onto plane perpendicular to b1
+    #   = b0 minus component that aligns with b1
+    # w = projection of b2 onto plane perpendicular to b1
+    #   = b2 minus component that aligns with b1
+    v = b0 - np.einsum('ij,ij->i', b0, b1)[:,None] * b1
+    w = b2 - np.einsum('ij,ij->i', b2, b1)[:,None] * b1
+
+    # angle between v and w in a plane is the torsion angle
+    # v and w may not be normalized but that's fine since tan is y/x
+    x = np.einsum('ij,ij->i', v, w)
+    y = np.einsum('ij,ij->i', np.cross(b1, v), w)
+    return np.arctan2(y, x)
+
+
+class Dihedral(AnalysisBase):
     def __init__(self, top_file, trj_files, selection='backbone', dihedral_type='calpha', **kwargs):
-        u = Universe(top_file, trj_files)
-        atomgroup = u.select_atoms(selection)
-        super(Dihedrals, self).__init__(atomgroup.universe.trajectory, **kwargs)
-
-        self._ag = atomgroup
-        self._dihedral_type = dihedral_type
-
-    def _prepare(self):
+        # Used to store the result
         self.result = []
         # Where we will store all the atomgroups for each ca dihedral
-        self._ag_dihedrals = []
+        self._atom_ix = []
 
+        self._u = Universe(top_file, trj_files)
+        self._ag = self._u.select_atoms(selection)
+        self._dihedral_type = dihedral_type
+        super(Dihedral, self).__init__(self._ag.universe.trajectory, **kwargs)
+
+    def _prepare(self):
         # Get list of selected segids
         segids = np.unique(self._ag.segids)
 
@@ -65,22 +90,17 @@ class Dihedrals(AnalysisBase):
                             select_str = "(resid %s or resid %s or resid %s or resid %s) and name CA"
                             select_str = select_str % (residu, residu+1, residu+2, residu+3)
                             dihedral = s_seg.select_atoms(select_str)
-                            self._ag_dihedrals.append(dihedral)
+                            self._atom_ix.extend(list(dihedral.ix))
 
             elif self._dihedral_type == 'backbone':
                 for residu in residues[2:-2]:
                     phi = s_seg.residues[residu].phi_selection()
                     psi = s_seg.residues[residu].psi_selection()
-                    self._ag_dihedrals.extend([phi, psi])
+                    self._atom_ix.extend(list(phi.ix) + list(psi.ix))
 
     def _single_frame(self):
-        dihedral_angles = []
-
-        for ag_dihedral in self._ag_dihedrals:
-            a, b, c, d = ag_dihedral.atoms.positions.astype(np.float64)
-            dihedral_angles.append(mdamath.dihedral(a-b, b-c, c-d))
-
-        self.result.append(dihedral_angles)
+        positions = self._u.atoms[self._atom_ix].positions.astype(np.float64)
+        self.result.append(dihedral(positions))
 
     def _conclude(self):
         self.result = np.asarray(self.result)

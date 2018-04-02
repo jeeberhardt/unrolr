@@ -9,7 +9,7 @@
 
 
 from .core.unrolr import Unrolr
-from .feature_extraction.dihedrals import Dihedrals
+from .feature_extraction.dihedrals import Dihedral
 from .optimize.optimize import find_optimal_r_neighbor, find_optimal_n_iter
 from .plotting.plot_optimize import plot_optimization
 from .utils.dataset import read_dataset, save_dataset

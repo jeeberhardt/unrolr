@@ -8,6 +8,6 @@
 # License: MIT
 
 
-from .dihedrals import Dihedrals
+from .dihedrals import Dihedral
 
-__all__ = ["Dihedrals"]
+__all__ = ["Dihedral"]
