@@ -15,15 +15,17 @@ You need, at a minimum (requirements.txt):
 * PyOpenCL
 * MDAnalysis (==0.17)
 
-## Installation on UNIX
+## Installation on UNIX (Debian/Ubuntu)
 
 I highly recommand you to install the Anaconda distribution (https://www.continuum.io/downloads) if you want a clean python environnment with nearly all the prerequisites already installed (NumPy, H5py, Pandas, Matplotlib).
 
 1 . First, you have to install OpenCL:
 * MacOS: Good news, you don't have to install OpenCL, it works out-of-the-box. 
-* AMD: From all the tutorials you can find on the internet, this one it is still the more succinct one that I found: [AMD OpenCL installation on Ubuntu](https://ethereum.gitbooks.io/frontier-guide/content/gpu.html). 
-* Nvidia: You can either install the [CUDA toolkit](https://developer.nvidia.com/cuda-downloads) or directly the package ```nvidia-opencl-dev```.
-* Intel: And of course it's working also on CPU just by installing this [runtime software package](https://software.intel.com/en-us/articles/opencl-drivers). 
+* AMD:  You have to install the [AMD OpenCL™ 2.0 Driver](https://support.amd.com/en-us/kb-articles/Pages/OpenCL2-Driver.aspx).
+* Nvidia: You have to install the [CUDA toolkit](https://developer.nvidia.com/cuda-downloads).
+* Intel: And of course it's working also on CPU just by installing this [runtime software package](https://software.intel.com/en-us/articles/opencl-drivers). Alternatively, the CPU-based OpenCL driver can be also installed through the package ```pocl``` (http://portablecl.org/) with the conda package manager.
+
+For any other informations, the official installation guide of PyOpenCL is available [here](https://documen.tician.de/pyopencl/misc.html).
 
 2 . As a final step, 
 ```bash
@@ -103,7 +105,6 @@ print U.stress, U.correlation
 - [x] Compatibility with the latest version of MDAnalysis (==0.17)
 - [ ] Unit tests
 - [ ] Accessible directly from pip
-- [ ] Improve dihedral distance metric sensibility
 - [ ] Improve OpenCL performance (global/local memory)
 
 ## Citation
