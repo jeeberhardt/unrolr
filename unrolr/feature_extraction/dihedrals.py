@@ -131,7 +131,7 @@ def main():
     dihedral_type = options.dihedral_type
     output = options.output
 
-    d = Dihedrals(top_file, trj_files, selection, dihedral_type).run()
+    d = Dihedral(top_file, trj_files, selection, dihedral_type).run()
     data = d.result
 
     save_dataset(output, "dihedral_angles", data)
