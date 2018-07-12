@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from unrolr import Unrolr
-from unrolr.feature_extraction import calpha_dihedrals
+from unrolr.feature_extraction import Dihedral
 from unrolr.optimize import find_optimal_r_neighbor, find_optimal_n_iter
 from unrolr.plotting import plot_optimization
 from unrolr.utils import save_dataset
@@ -12,8 +12,9 @@ top_file = 'inputs/villin.psf'
 trj_file = 'inputs/villin.dcd'
 
 print "Extract all dihedral angles ..."
-X = calpha_dihedrals(top_file, trj_file)
-save_dataset('outputs/dihedral_angles.h5', "dihedral_angles", X)
+d = Dihedral(top_file, trj_file, selection='all', dihedral_type='calpha', start=0, stop=None, step=1).run()
+X = d.result
+save_dataset('dihedral_angles.h5', "dihedral_angles", X)
 
 print "Find optimal r_neighbor value ..."
 df = find_optimal_r_neighbor(X[::2,], r_parameters=[0.1, 0.5, 0.01])

@@ -7,7 +7,7 @@ First load of the functions needed from the Unrolr package
 
 ```python
 from unrolr import Unrolr
-from unrolr.feature_extraction import calpha_dihedrals
+from unrolr.feature_extraction import Dihedral
 from unrolr.optimize import find_optimal_r_neighbor, find_optimal_n_iter
 from unrolr.plotting import plot_optimization
 from unrolr.utils import save_dataset
@@ -21,8 +21,9 @@ The first step will be the extraction of all the pseudo C-alpha dihedral angles 
 top_file = 'inputs/villin.psf'
 trj_file = 'inputs/villin.dcd'
 
-X = calpha_dihedrals(top_file, trj_file) # or backbone_dihedrals(top_file, trj_file)
-save_dataset('outputs/dihedral_angles.h5', "dihedral_angles", X)
+d = Dihedral(top_file, trj_file, selection='all', dihedral_type='calpha', start=0, stop=None, step=1).run()
+X = d.result
+save_dataset('dihedral_angles.h5', "dihedral_angles", X)
 ```
 
 As output, you will have a HDF5 file, named ```dihedral_angles.h5```, containing all the pseudo C-alpha dihedral angle (32 in total) from 10.000 frames of the villin headpiece. This HDF5 file can be opened and visualised easily using [HDFView](https://support.hdfgroup.org/products/java/hdfview/).
