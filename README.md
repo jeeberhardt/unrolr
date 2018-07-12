@@ -13,7 +13,7 @@ You need, at a minimum (requirements.txt):
 * Pandas
 * Matplotlib
 * PyOpenCL
-* MDAnalysis (==0.17)
+* MDAnalysis (>=0.17)
 
 ## Installation on UNIX (Debian/Ubuntu)
 
