@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Jérôme Eberhardt 2016-2017
+# Jérôme Eberhardt 2016-2018
 # Unrolr
 #
 # The core of Unrolr (pSPE + dihedral distance as metric)
@@ -23,7 +23,7 @@ import pyopencl as cl
 from ..utils import read_dataset
 
 __author__ = "Jérôme Eberhardt"
-__copyright__ = "Copyright 2016, Jérôme Eberhardt"
+__copyright__ = "Copyright 2018, Jérôme Eberhardt"
 
 __lience__ = "MIT"
 __maintainer__ = "Jérôme Eberhardt"
@@ -32,7 +32,8 @@ __email__ = "qksoneo@gmail.com"
 
 class Unrolr():
 
-    def __init__(self, r_neighbor, n_components=2, n_iter=10000, random_seed=None, verbose=0):
+    def __init__(self, r_neighbor, metric='dihedral', n_components=2, n_iter=10000,
+                 random_seed=None, verbose=0):
 
         # Check PYOPENCL_CTX environnment variable
         if not self._check_environnment_variable("PYOPENCL_CTX"):
@@ -43,12 +44,13 @@ class Unrolr():
         self.n_components = n_components
         self.r_neighbor = r_neighbor
         self.n_iter = n_iter
-        self.learning_rate = 1.0
-        self.epsilon = 1e-4
-
+        self._metric = metric
         # Set numpy random state and verbose
         self.random_seed = self._set_random_state(random_seed)
         self.verbose = verbose
+
+        self.learning_rate = 1.0
+        self.epsilon = 1e-4
 
         self.embedding = None
         self.stress = None
@@ -76,7 +78,7 @@ class Unrolr():
 
     def _spe(self, X):
         """
-        The Unrolr (pSPE + dihedral distance) method itself !
+        The Unrolr (pSPE + dihedral_distance/intermolecular_distance) method itself!
         """
         alpha = self.learning_rate / float(self.n_iter)
 
@@ -100,6 +102,21 @@ class Unrolr():
 
                 tmp = (1.0/size) * 0.5 * (size - r[i]);
                 r[i] = sqrt(tmp);
+            }
+
+        __kernel void intramolecular_distance(__global const float* a, __global float* r, int x, int size)
+            {
+                int i = get_global_id(0);
+                float tmp;
+
+                r[i] = 0.0;
+
+                for(int g=0; g<size; g++)
+                {
+                    r[i] += pow(a[x*size+g] - a[i*size+g], 2);
+                }
+
+                r[i] = sqrt((2.0/(size*(size-1)))*r[i]);
             }
 
         __kernel void euclidean_distance(__global const float* a, __global float* r, int x, int size, int ndim)
@@ -158,9 +175,15 @@ class Unrolr():
             # Choose random embedding (pivot)
             pivot = np.int32(np.random.randint(X.shape[0]))
 
-            # Compute dihedral distances
-            program.dihedral_distance(queue, (X.shape[0],), None, X_buf, rij_buf, 
-                                      pivot, np.int32(X.shape[1])).wait()
+            if self._metric == 'dihedral':
+                # Compute dihedral distances
+                program.dihedral_distance(queue, (X.shape[0],), None, X_buf, rij_buf, 
+                                          pivot, np.int32(X.shape[1])).wait()
+            elif self._metric == 'intramolecular':
+                # Compute intramolecular distance
+                program.intramolecular_distance(queue, (X.shape[0],), None, X_buf, rij_buf, 
+                                                pivot, np.int32(X.shape[1])).wait()
+
             # Compute euclidean distances
             program.euclidean_distance(queue, (d.shape[1],), None, d_buf, 
                                        dij_buf, pivot, np.int32(d.shape[1]), 
@@ -207,6 +230,21 @@ class Unrolr():
 
                 tmp = (1.0/size) * 0.5 * (size - r[i]);
                 r[i] = sqrt(tmp);
+            }
+
+        __kernel void intramolecular_distance(__global const float* a, __global float* r, int x, int size)
+            {
+                int i = get_global_id(0);
+                float tmp;
+
+                r[i] = 0.0;
+
+                for(int g=0; g<size; g++)
+                {
+                    r[i] += pow(a[x*size+g] - a[i*size+g], 2);
+                }
+
+                r[i] = sqrt((2.0/(size*(size-1)))*r[i]);
             }
 
         __kernel void euclidean_distance(__global const float* a, __global float* r, int x, int size, int ndim)
@@ -261,9 +299,15 @@ class Unrolr():
             # Choose random conformation as pivot
             pivot = np.int32(np.random.randint(X.shape[0]))
 
-            # Dihedral distances
-            program.dihedral_distance(queue, (X.shape[0],), None, X_buf, rij_buf,
-                                       pivot, np.int32(X.shape[1])).wait()
+            if self._metric == 'dihedral':
+                # Dihedral distances
+                program.dihedral_distance(queue, (X.shape[0],), None, X_buf, rij_buf,
+                                           pivot, np.int32(X.shape[1])).wait()
+            elif self._metric == 'intramolecular':
+                # Dihedral distances
+                program.intramolecular_distance(queue, (X.shape[0],), None, X_buf, rij_buf,
+                                                pivot, np.int32(X.shape[1])).wait()
+
             # Euclidean distances
             program.euclidean_distance(queue, (embedding.shape[1],), None, e_buf,
                                         dij_buf, pivot, np.int32(embedding.shape[1]),
