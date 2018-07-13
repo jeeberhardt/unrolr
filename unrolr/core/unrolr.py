@@ -59,7 +59,7 @@ class Unrolr():
 
         # Read OpenCL kernel file
         path = imp.find_module('unrolr')[1]
-        fname = path + '/core/kernel.cl'
+        fname = os.path.join(path, '/core/kernel.cl')
 
         with open(fname) as f:
             self._kernel = f.read()
