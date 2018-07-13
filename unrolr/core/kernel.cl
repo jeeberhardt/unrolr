@@ -43,8 +43,7 @@ __kernel void euclidean_distance(__global const float* a, __global float* r, int
     r[i] = sqrt(r[i]);
 }
 
-__kernel void spe(__global float* rij, __global float* dij, __global float* d,
-              int x, int size, float rc, float learning_rate)
+__kernel void spe(__global float* rij, __global float* dij, __global float* d, int x, int size, float rc, float learning_rate)
 {
     const float eps = 1e-10;
     int i = get_global_id(0);
@@ -56,5 +55,15 @@ __kernel void spe(__global float* rij, __global float* dij, __global float* d,
     if (((rij[j] <= rc) || (rij[j] > rc && dij[j] < rij[j])) && (index != pindex))
     {
         d[index] = d[index] + (learning_rate * ((rij[j]-dij[j])/(dij[j]+eps)) * (d[index]-d[pindex]));
+    }
+}
+
+__kernel void stress(__global float* rij, __global float* dij, __global float* sij, float rc)
+{
+    int i = get_global_id(0);
+    sij[i] = 0.0;
+    if ((rij[i] <= rc) || (dij[i] < rij[i]))
+    {
+        sij[i] = ((dij[i]-rij[i])*(dij[i]-rij[i]))/(rij[i]);
     }
 }
