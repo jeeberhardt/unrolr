@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Jérôme Eberhardt 2016-2017
+# Jérôme Eberhardt 2016-2018
 # Author: Jérôme Eberhardt <qksonoe@gmail.com>
 #
 # License: MIT
@@ -9,7 +9,7 @@
 from setuptools import setup, find_packages
 
 setup(name='unrolr',
-      version=0.2,
+      version=0.3,
       description='Dimensionality reduction method for MD trajectories',
       author='Jérôme Eberhardt',
       author_email='qksoneo@gmail.com',
@@ -21,7 +21,7 @@ setup(name='unrolr',
                    },
       install_requires=['setuptools', 'h5py', 'matplotlib',
                         'numpy', 'pandas', 'pyopencl',
-                        'MDAnalysis==0.15'],
+                        'MDAnalysis>=0.15'],
       include_package_data=True,
       license='MIT',
       keywords=['bioinformatics', 'molecular structures',
