@@ -13,6 +13,7 @@
 from __future__ import print_function
 
 import os
+import imp
 import sys
 import argparse
 
@@ -56,6 +57,13 @@ class Unrolr():
         self.stress = None
         self.correlation = None
 
+        # Read OpenCL kernel file
+        path = imp.find_module('unrolr')[1]
+        fname = path + '/core/kernel.cl'
+
+        with open(fname) as f:
+            self._kernel = f.read()
+
     def _check_environnment_variable(self, variable):
         """
         Check if an environnment variable exist or not
@@ -87,68 +95,7 @@ class Unrolr():
         queue = cl.CommandQueue(ctx)
 
         # Compile kernel
-        program = cl.Program(ctx, """
-        __kernel void dihedral_distance(__global const float* a, __global float* r, int x, int size)
-            {
-                int i = get_global_id(0);
-                float tmp;
-
-                r[i] = 0.0;
-
-                for(int g=0; g<size; g++)
-                {
-                    r[i] += cos(a[x*size+g] - a[i*size+g]);
-                }
-
-                tmp = (1.0/size) * 0.5 * (size - r[i]);
-                r[i] = sqrt(tmp);
-            }
-
-        __kernel void intramolecular_distance(__global const float* a, __global float* r, int x, int size)
-            {
-                int i = get_global_id(0);
-                float tmp;
-
-                r[i] = 0.0;
-
-                for(int g=0; g<size; g++)
-                {
-                    r[i] += pow(a[x*size+g] - a[i*size+g], 2);
-                }
-
-                r[i] = sqrt((2.0/(size*(size-1)))*r[i]);
-            }
-
-        __kernel void euclidean_distance(__global const float* a, __global float* r, int x, int size, int ndim)
-            {
-                int i = get_global_id(0);
-
-                r[i] = 0.0;
-
-                for(int g=0; g<ndim; g++)
-                {
-                    r[i] += (a[g*size+i] - a[g*size+x]) * (a[g*size+i] - a[g*size+x]);
-                }
-
-                r[i] = sqrt(r[i]);
-            }
-
-        __kernel void spe(__global float* rij, __global float* dij, __global float* d,
-                          int x, int size, float rc, float learning_rate)
-            {
-                const float eps = 1e-10;
-                int i = get_global_id(0);
-                int j = get_global_id(1);
-
-                int index = i * size + j;
-                int pindex = i * size + x;
-
-                if (((rij[j] <= rc) || (rij[j] > rc && dij[j] < rij[j])) && (index != pindex))
-                {
-                    d[index] = d[index] + (learning_rate * ((rij[j]-dij[j])/(dij[j]+eps)) * (d[index]-d[pindex]));
-                }
-            }
-        """).build()
+        program = cl.Program(ctx, self._kernel).build()
 
         # Send dihedral angles to CPU/GPU
         X_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=X)
@@ -166,7 +113,6 @@ class Unrolr():
         freq_progression = self.n_iter / 100.
 
         for i in xrange(0, self.n_iter + 1):
-
             if i % freq_progression == 0 and self.verbose:
                 percentage = float(i) / float(self.n_iter) * 100.
                 sys.stdout.write("\rUnrolr Optimization         : %8.3f %%" % percentage)
@@ -215,64 +161,7 @@ class Unrolr():
         queue = cl.CommandQueue(ctx)
 
         # On compile le kernel
-        program = cl.Program(ctx, """
-        __kernel void dihedral_distance(__global const float* a, __global float* r, int x, int size)
-            {
-                int i = get_global_id(0);
-                float tmp;
-
-                r[i] = 0.0;
-
-                for(int g=0; g<size; g++)
-                {
-                    r[i] += cos(a[x*size+g] - a[i*size+g]);
-                }
-
-                tmp = (1.0/size) * 0.5 * (size - r[i]);
-                r[i] = sqrt(tmp);
-            }
-
-        __kernel void intramolecular_distance(__global const float* a, __global float* r, int x, int size)
-            {
-                int i = get_global_id(0);
-                float tmp;
-
-                r[i] = 0.0;
-
-                for(int g=0; g<size; g++)
-                {
-                    r[i] += pow(a[x*size+g] - a[i*size+g], 2);
-                }
-
-                r[i] = sqrt((2.0/(size*(size-1)))*r[i]);
-            }
-
-        __kernel void euclidean_distance(__global const float* a, __global float* r, int x, int size, int ndim)
-            {
-                int i = get_global_id(0);
-
-                r[i] = 0.0;
-
-                for(int g=0; g<ndim; g++)
-                {
-                    r[i] += (a[g*size+i] - a[g*size+x]) * (a[g*size+i] - a[g*size+x]);
-                }
-
-                r[i] = sqrt(r[i]);
-            }
-
-        __kernel void stress(__global float* rij, __global float* dij, __global float* sij, float rc)
-            {
-                int i = get_global_id(0);
-
-                sij[i] = 0.0;
-
-                if ((rij[i] <= rc) || (dij[i] < rij[i]))
-                {
-                    sij[i] = ((dij[i]-rij[i])*(dij[i]-rij[i]))/(rij[i]);
-                }
-            }
-        """).build()
+        program = cl.Program(ctx, self._kernel).build()
 
         # Send dihedral angles and embedding on CPU/GPU
         e_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=embedding)
@@ -295,7 +184,6 @@ class Unrolr():
         old_correl = 999.
 
         while True:
-
             # Choose random conformation as pivot
             pivot = np.int32(np.random.randint(X.shape[0]))
 
