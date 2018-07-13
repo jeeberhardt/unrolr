@@ -6,7 +6,19 @@
 #
 # License: MIT
 
+from os.path import realpath, dirname, join
 from setuptools import setup, find_packages
+
+
+PROJECT_ROOT = dirname(realpath(__file__))
+
+REQUIREMENTS_FILE = join(PROJECT_ROOT, 'requirement.txt')
+
+with open(REQUIREMENTS_FILE) as f:
+    install_reqs = f.read().splitlines()
+
+install_reqs.append('setuptools')
+
 
 setup(name='unrolr',
       version=0.3,
@@ -19,10 +31,9 @@ setup(name='unrolr',
                          'README.md',
                          'requirement.txt']
                    },
-      install_requires=['setuptools', 'h5py', 'matplotlib',
-                        'numpy', 'pandas', 'pyopencl',
-                        'MDAnalysis>=0.17'],
+      install_requires=install_reqs,
       include_package_data=True,
+      zip_safe=False,
       license='MIT',
       keywords=['bioinformatics', 'molecular structures',
                'molecular dynamics', 'OpenCL',
