@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Jérôme Eberhardt 2016-2017
+# Jérôme Eberhardt 2016-2018
 # Unrolr
 #
 # Function to read and save data from/to a HDF5 file
@@ -14,7 +14,7 @@ import h5py
 import numpy as np
 
 __author__ = "Jérôme Eberhardt"
-__copyright__ = "Copyright 2017, Jérôme Eberhardt"
+__copyright__ = "Copyright 2018, Jérôme Eberhardt"
 
 __lience__ = "MIT"
 __maintainer__ = "Jérôme Eberhardt"

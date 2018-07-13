@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Jérôme Eberhardt 2016-2017
+# Jérôme Eberhardt 2016-2018
 # Unrolr
 #
 # Functions to find the best r_neighbors value (and n_iter) possible
@@ -13,6 +13,14 @@ import numpy as np
 import pandas as pd
 
 from .. import Unrolr
+
+__author__ = "Jérôme Eberhardt"
+__copyright__ = "Copyright 2018, Jérôme Eberhardt"
+
+__lience__ = "MIT"
+__maintainer__ = "Jérôme Eberhardt"
+__email__ = "qksoneo@gmail.com"
+
 
 def find_optimal_r_neighbor(X, r_parameters, metric='dihedral', n_components=2, n_iter=5000, n_runs=5):
 
