@@ -42,17 +42,18 @@ class Unrolr():
             print("Tip: python -c \"import pyopencl as cl; cl.create_some_context()\"")
             sys.exit(1)
 
-        self.n_components = n_components
-        self.r_neighbor = r_neighbor
-        self.n_iter = n_iter
+        self._n_components = n_components
+        self._r_neighbor = r_neighbor
+        self._n_iter = n_iter
         self._metric = metric
         # Set numpy random state and verbose
-        self.random_seed = self._set_random_state(random_seed)
-        self.verbose = verbose
+        self._random_seed = self._set_random_state(random_seed)
+        self._verbose = verbose
 
-        self.learning_rate = 1.0
-        self.epsilon = 1e-4
+        self._learning_rate = 1.0
+        self._epsilon = 1e-4
 
+        # Output variable
         self.embedding = None
         self.stress = None
         self.correlation = None
@@ -88,7 +89,7 @@ class Unrolr():
         """
         The Unrolr (pSPE + dihedral_distance/intermolecular_distance) method itself!
         """
-        alpha = self.learning_rate / float(self.n_iter)
+        alpha = self._learning_rate / float(self._n_iter)
 
         # Create context and queue
         ctx = cl.create_some_context()
@@ -106,15 +107,15 @@ class Unrolr():
         dij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, tmp.nbytes)
 
         # Generate initial (random)
-        d = np.float32(np.random.rand(self.n_components, X.shape[0]))
+        d = np.float32(np.random.rand(self._n_components, X.shape[0]))
         # Send initial (random) embedding to the CPU/GPU
         d_buf = cl.Buffer(ctx, cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR, hostbuf=d)
 
-        freq_progression = self.n_iter / 100.
+        freq_progression = self._n_iter / 100.
 
-        for i in xrange(0, self.n_iter + 1):
-            if i % freq_progression == 0 and self.verbose:
-                percentage = float(i) / float(self.n_iter) * 100.
+        for i in xrange(0, self._n_iter + 1):
+            if i % freq_progression == 0 and self._verbose:
+                percentage = float(i) / float(self._n_iter) * 100.
                 sys.stdout.write("\rUnrolr Optimization         : %8.3f %%" % percentage)
                 sys.stdout.flush()
 
@@ -136,15 +137,15 @@ class Unrolr():
                                        np.int32(d.shape[0])).wait()
             # Stochastic Proximity Embbeding
             program.spe(queue, d.shape, None, rij_buf, dij_buf, d_buf, pivot, 
-                        np.int32(d.shape[1]), np.float32(self.r_neighbor), 
-                        np.float32(self.learning_rate)).wait()
+                        np.int32(d.shape[1]), np.float32(self._r_neighbor), 
+                        np.float32(self._learning_rate)).wait()
 
-            self.learning_rate -= alpha
+            self._learning_rate -= alpha
 
         # Get the last embedding d
         cl.enqueue_copy(queue, d, d_buf)
 
-        if self.verbose:
+        if self._verbose:
             print()
 
         self.embedding = d
@@ -154,7 +155,7 @@ class Unrolr():
         Dirty function to evaluate the final embedding
         """
         embedding = self.embedding
-        r_neighbor = self.r_neighbor
+        r_neighbor = self._r_neighbor
 
         # Creation du contexte et de la queue
         ctx = cl.create_some_context()
@@ -220,7 +221,7 @@ class Unrolr():
             stress = tmp_sij_sum / tmp_dij_sum
 
             # Test for convergence
-            if (np.abs(old_stress - stress) < self.epsilon) and (np.abs(old_correl - correl) < self.epsilon):
+            if (np.abs(old_stress - stress) < self._epsilon) and (np.abs(old_correl - correl) < self._epsilon):
                 self.correlation = correl
                 self.stress = stress
 
@@ -257,10 +258,10 @@ class Unrolr():
             fmt = "%012d,"
 
         # Create header and format
-        header = "r_neighbor %s n_iter %s" %(self.r_neighbor, self.n_iter)
-        header += " stress %s correlation %s" % (self.stress, self.correlation)
-        header += " seed %s" % self.random_seed
-        fmt += "%.5f" + (self.n_components - 1) * ",%.5f"
+        header = "r_neighbor %s n_iter %s" %(self._r_neighbor, self._n_iter)
+        header += " stress %s correlation %s" % (self._stress, self._correlation)
+        header += " seed %s" % self._random_seed
+        fmt += "%.5f" + (self._n_components - 1) * ",%.5f"
 
         # Save final embedding to txt file
         np.savetxt(fname, self.embedding, fmt=fmt, header=header)
