@@ -31,6 +31,7 @@ setup(name='unrolr',
                          'README.md',
                          'requirement.txt']
                    },
+      data_files = [('', ['unrolr/core/kernel.cl'])],
       install_requires=install_reqs,
       include_package_data=True,
       zip_safe=False,
