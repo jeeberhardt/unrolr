@@ -259,7 +259,7 @@ class Unrolr():
 
         # Create header and format
         header = "r_neighbor %s n_iter %s" %(self._r_neighbor, self._n_iter)
-        header += " stress %s correlation %s" % (self._stress, self._correlation)
+        header += " stress %s correlation %s" % (self.stress, self.correlation)
         header += " seed %s" % self._random_seed
         fmt += "%.5f" + (self._n_components - 1) * ",%.5f"
 
