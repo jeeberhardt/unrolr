@@ -26,7 +26,8 @@ __kernel void intramolecular_distance(__global const float* a, __global float* r
         r[i] += pow(a[x*size+g] - a[i*size+g], 2);
     }
 
-    r[i] = sqrt((2.0/(size*(size-1)))*r[i]);
+    tmp = (2.0 / (size * (size-1))) * r[i];
+    r[i] = sqrt(tmp);
 }
 
 __kernel void euclidean_distance(__global const float* a, __global float* r, int x, int size, int ndim)
