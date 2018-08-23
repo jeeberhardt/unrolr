@@ -10,7 +10,7 @@ __kernel void dihedral_distance(__global const float* a, __global float* r, int 
         r[i] += cos(a[x*size+g] - a[i*size+g]);
     }
 
-    tmp = (1.0/size) * 0.5 * (size - r[i]);
+    tmp = (1.0 / size) * 0.5 * (size - r[i]);
     r[i] = sqrt(tmp);
 }
 
@@ -26,8 +26,7 @@ __kernel void intramolecular_distance(__global const float* a, __global float* r
         r[i] += pow(a[x*size+g] - a[i*size+g], 2);
     }
 
-    tmp = (2.0 / (size * (size-1))) * r[i];
-    r[i] = sqrt(tmp);
+    r[i] = sqrt(r[i] / size);
 }
 
 __kernel void euclidean_distance(__global const float* a, __global float* r, int x, int size, int ndim)
@@ -62,7 +61,9 @@ __kernel void spe(__global float* rij, __global float* dij, __global float* d, i
 __kernel void stress(__global float* rij, __global float* dij, __global float* sij, float rc)
 {
     int i = get_global_id(0);
+
     sij[i] = 0.0;
+
     if ((rij[i] <= rc) || (dij[i] < rij[i]))
     {
         sij[i] = ((dij[i]-rij[i])*(dij[i]-rij[i]))/(rij[i]);
