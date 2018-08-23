@@ -20,7 +20,7 @@ You need, at a minimum (requirements.txt):
 I highly recommand you to install the Anaconda distribution (https://www.continuum.io/downloads) if you want a clean python environnment with nearly all the prerequisites already installed (NumPy, H5py, Pandas, Matplotlib).
 
 1 . First, you have to install OpenCL:
-* MacOS: Good news, you don't have to install OpenCL, it works out-of-the-box. 
+* MacOS: Good news, you don't have to install OpenCL, it works out-of-the-box. (Update: bad news, OpenCL is no depreciated in macOS 10.14. Thanks Apple.)
 * AMD:  You have to install the [AMD OpenCL™ 2.0 Driver](https://support.amd.com/en-us/kb-articles/Pages/OpenCL2-Driver.aspx).
 * Nvidia: You have to install the [CUDA toolkit](https://developer.nvidia.com/cuda-downloads).
 * Intel: And of course it's working also on CPU just by installing this [runtime software package](https://software.intel.com/en-us/articles/opencl-drivers). Alternatively, the CPU-based OpenCL driver can be also installed through the package ```pocl``` (http://portablecl.org/) with the conda package manager.
