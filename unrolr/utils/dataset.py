@@ -10,7 +10,10 @@
 # License: MIT
 
 
+import sys
+
 import h5py
+import pyopencl as cl
 import numpy as np
 
 __author__ = "Jérôme Eberhardt"
@@ -45,3 +48,32 @@ def save_dataset(fname, dname, data):
             pass
 
         w.flush()
+
+def get_max_conformations_from_dataset(fname, dname):
+    """ Return the maximum number of conformations that
+    can fit into the memory of the selected OpenCL device
+    and also the step/interval """
+    ctx = cl.create_some_context()
+    max_size = int(ctx.devices[0].max_mem_alloc_size)
+
+    try:
+        with h5py.File(fname, 'r') as f:
+            bytes_size = f[dname].dtype.itemsize
+            n_conf, n_dim = f[dname].shape
+            data_size = bytes_size * n_conf * n_dim
+    except IOError:
+        print("Error: cannot find file %s" % fname)
+
+    if data_size > max_size:
+        """ Return the first interval that produces a dataset
+        with a size inferior than max_size """
+        for i in range(1, n_conf):
+            if n_conf % i == 0:
+                tmp_size = (n_conf / i) * n_dim * bytes_size
+                if tmp_size <= max_size:
+                    return (n_conf / i, i)
+
+        # Return None if we didn't find anything
+        return None
+    else:
+        return (data_shape[0], 1)
