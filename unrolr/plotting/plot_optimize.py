@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-def plot_optimization(fname, df, of):
+def plot_optimization(fname, df, of, show=True):
 
     xlabel = r"Neighborhood $r_{c}$"
     logx = False
@@ -44,4 +44,6 @@ def plot_optimization(fname, df, of):
     ax2.set_ylim(0, 1)
 
     plt.savefig(fname, dpi=300, format="png", bbox_inches="tight")
-    plt.show()
+
+    if show:
+        plt.show()
