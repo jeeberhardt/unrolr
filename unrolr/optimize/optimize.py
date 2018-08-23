@@ -23,7 +23,9 @@ __email__ = "qksoneo@gmail.com"
 
 
 def find_optimal_r_neighbor(X, r_parameters, metric='dihedral', n_components=2, n_iter=5000, n_runs=5):
-
+    """ Try different neighborhood radius rc 
+    and compute the stress and correlation.
+    """
     idx = 0
     columns = ["run", "r_neighbor", "n_iter", "stress", "correlation"]
     df = pd.DataFrame(np.nan, index=[0], columns=columns)
@@ -44,14 +46,15 @@ def find_optimal_r_neighbor(X, r_parameters, metric='dihedral', n_components=2, 
     return df
 
 def find_optimal_n_iter(X, n_iters, r_neighbor, metric='dihedral', n_components=2, n_runs=5):
-
+    """ Try different number of optimization cycle with a certain
+    neighborhood radius rc and compute the stress and correlation.
+    """
     idx = 0
     columns = ["run", "r_neighbor", "n_iter", "stress", "correlation"]
     df = pd.DataFrame(np.nan, index=[0], columns=columns)
 
     for n_iter in n_iters:
         for i in range(n_runs):
-            print n_iter, i
             U = Unrolr(r_neighbor, metric, n_components, n_iter)
             U.fit(X)
 
