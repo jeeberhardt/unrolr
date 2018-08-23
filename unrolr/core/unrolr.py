@@ -179,7 +179,7 @@ class Unrolr():
 
         tmp_correl = []
         tmp_sij_sum = 0.0
-        tmp_dij_sum = 0.0
+        tmp_rij_sum = 0.0
 
         old_stress = 999.
         old_correl = 999.
@@ -217,8 +217,8 @@ class Unrolr():
 
             # Compute current stress
             tmp_sij_sum += np.sum(sij[~np.isnan(sij)])
-            tmp_dij_sum += np.sum(dij)
-            stress = tmp_sij_sum / tmp_dij_sum
+            tmp_rij_sum += np.sum(rij)
+            stress = tmp_sij_sum / tmp_rij_sum
 
             # Test for convergence
             if (np.abs(old_stress - stress) < self._epsilon) and (np.abs(old_correl - correl) < self._epsilon):
