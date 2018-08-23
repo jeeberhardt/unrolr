@@ -38,7 +38,8 @@ class IntramolecularDistance(AnalysisBase):
         super(IntramolecularDistance, self).__init__(self._ag.universe.trajectory, **kwargs)
 
     def _single_frame(self):
-        self.result.append(self_distance_array(self._ag.positions))
+        d = self_distance_array(self._ag.positions)
+        self.result.append(np.asarray(d, dtype=np.float32))
 
     def _conclude(self):
         self.result = np.asarray(self.result)
