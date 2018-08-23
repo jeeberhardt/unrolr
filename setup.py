@@ -1,15 +1,27 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Jérôme Eberhardt 2016-2017
+# Jérôme Eberhardt 2016-2018
 # Author: Jérôme Eberhardt <qksonoe@gmail.com>
 #
 # License: MIT
 
+from os.path import realpath, dirname, join
 from setuptools import setup, find_packages
 
+
+PROJECT_ROOT = dirname(realpath(__file__))
+
+REQUIREMENTS_FILE = join(PROJECT_ROOT, 'requirement.txt')
+
+with open(REQUIREMENTS_FILE) as f:
+    install_reqs = f.read().splitlines()
+
+install_reqs.append('setuptools')
+
+
 setup(name='unrolr',
-      version=0.2,
+      version=0.3,
       description='Dimensionality reduction method for MD trajectories',
       author='Jérôme Eberhardt',
       author_email='qksoneo@gmail.com',
@@ -19,10 +31,10 @@ setup(name='unrolr',
                          'README.md',
                          'requirement.txt']
                    },
-      install_requires=['setuptools', 'h5py', 'matplotlib',
-                        'numpy', 'pandas', 'pyopencl',
-                        'MDAnalysis==0.15'],
+      data_files = [('', ['unrolr/core/kernel.cl'])],
+      install_requires=install_reqs,
       include_package_data=True,
+      zip_safe=False,
       license='MIT',
       keywords=['bioinformatics', 'molecular structures',
                'molecular dynamics', 'OpenCL',

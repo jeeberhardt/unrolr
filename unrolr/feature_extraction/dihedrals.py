@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Jérôme Eberhardt 2016-2017
+# Jérôme Eberhardt 2016-2018
 # Unrolr
 #
 # Extract calpha or phi/psi dihedral angles from trajectories
@@ -29,33 +29,6 @@ __maintainer__ = "Jérôme Eberhardt"
 __email__ = "qksoneo@gmail.com"
 
 
-def dihedral(positions):
-    """ Vectorized version of the dihedral angle function
-    Source: https://stackoverflow.com/questions/20305272/dihedral-torsion-angle-from-four-points-in-cartesian-coordinates-in-python"""
-    
-    b0 = -(positions[1::4] - positions[::4])
-    b1 = positions[2::4] - positions[1::4]
-    b2 = positions[3::4] - positions[2::4]
-
-    # normalize b1 so that it does not influence magnitude of vector
-    # rejections that come next
-    b1 /= np.linalg.norm(b1, axis=1)[:,None]
-
-    # vector rejections
-    # v = projection of b0 onto plane perpendicular to b1
-    #   = b0 minus component that aligns with b1
-    # w = projection of b2 onto plane perpendicular to b1
-    #   = b2 minus component that aligns with b1
-    v = b0 - np.einsum('ij,ij->i', b0, b1)[:,None] * b1
-    w = b2 - np.einsum('ij,ij->i', b2, b1)[:,None] * b1
-
-    # angle between v and w in a plane is the torsion angle
-    # v and w may not be normalized but that's fine since tan is y/x
-    x = np.einsum('ij,ij->i', v, w)
-    y = np.einsum('ij,ij->i', np.cross(b1, v), w)
-    return np.arctan2(y, x)
-
-
 class Dihedral(AnalysisBase):
     def __init__(self, top_file, trj_files, selection='backbone', dihedral_type='calpha', **kwargs):
         # Used to store the result
@@ -67,6 +40,32 @@ class Dihedral(AnalysisBase):
         self._ag = self._u.select_atoms(selection)
         self._dihedral_type = dihedral_type
         super(Dihedral, self).__init__(self._ag.universe.trajectory, **kwargs)
+
+    def _dihedral(self, positions):
+        """ Vectorized version of the dihedral angle function
+        Source: https://stackoverflow.com/questions/20305272/dihedral-torsion-angle-from-four-points-in-cartesian-coordinates-in-python"""
+        
+        b0 = -(positions[1::4] - positions[::4])
+        b1 = positions[2::4] - positions[1::4]
+        b2 = positions[3::4] - positions[2::4]
+
+        # normalize b1 so that it does not influence magnitude of vector
+        # rejections that come next
+        b1 /= np.linalg.norm(b1, axis=1)[:,None]
+
+        # vector rejections
+        # v = projection of b0 onto plane perpendicular to b1
+        #   = b0 minus component that aligns with b1
+        # w = projection of b2 onto plane perpendicular to b1
+        #   = b2 minus component that aligns with b1
+        v = b0 - np.einsum('ij,ij->i', b0, b1)[:,None] * b1
+        w = b2 - np.einsum('ij,ij->i', b2, b1)[:,None] * b1
+
+        # angle between v and w in a plane is the torsion angle
+        # v and w may not be normalized but that's fine since tan is y/x
+        x = np.einsum('ij,ij->i', v, w)
+        y = np.einsum('ij,ij->i', np.cross(b1, v), w)
+        return np.arctan2(y, x)
 
     def _prepare(self):
         # Get list of selected segids
@@ -99,7 +98,8 @@ class Dihedral(AnalysisBase):
                     self._atom_ix.extend(list(phi.ix) + list(psi.ix))
 
     def _single_frame(self):
-        self.result.append(dihedral(self._u.atoms[self._atom_ix].positions))
+        d = self._dihedral(self._u.atoms[self._atom_ix].positions)
+        self.result.append(np.asarray(d, dtype=np.float32))
 
     def _conclude(self):
         self.result = np.asarray(self.result)

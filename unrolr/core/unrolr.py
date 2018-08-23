@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Jérôme Eberhardt 2016-2017
+# Jérôme Eberhardt 2016-2018
 # Unrolr
 #
 # The core of Unrolr (pSPE + dihedral distance as metric)
@@ -13,6 +13,7 @@
 from __future__ import print_function
 
 import os
+import imp
 import sys
 import argparse
 
@@ -23,7 +24,7 @@ import pyopencl as cl
 from ..utils import read_dataset
 
 __author__ = "Jérôme Eberhardt"
-__copyright__ = "Copyright 2016, Jérôme Eberhardt"
+__copyright__ = "Copyright 2018, Jérôme Eberhardt"
 
 __lience__ = "MIT"
 __maintainer__ = "Jérôme Eberhardt"
@@ -32,7 +33,8 @@ __email__ = "qksoneo@gmail.com"
 
 class Unrolr():
 
-    def __init__(self, r_neighbor, n_components=2, n_iter=10000, random_seed=None, verbose=0):
+    def __init__(self, r_neighbor, metric='dihedral', n_components=2, n_iter=10000,
+                 random_seed=None, verbose=0):
 
         # Check PYOPENCL_CTX environnment variable
         if not self._check_environnment_variable("PYOPENCL_CTX"):
@@ -40,19 +42,28 @@ class Unrolr():
             print("Tip: python -c \"import pyopencl as cl; cl.create_some_context()\"")
             sys.exit(1)
 
-        self.n_components = n_components
-        self.r_neighbor = r_neighbor
-        self.n_iter = n_iter
-        self.learning_rate = 1.0
-        self.epsilon = 1e-4
-
+        self._n_components = n_components
+        self._r_neighbor = r_neighbor
+        self._n_iter = n_iter
+        self._metric = metric
         # Set numpy random state and verbose
-        self.random_seed = self._set_random_state(random_seed)
-        self.verbose = verbose
+        self._random_seed = self._set_random_state(random_seed)
+        self._verbose = verbose
 
+        self._learning_rate = 1.0
+        self._epsilon = 1e-4
+
+        # Output variable
         self.embedding = None
         self.stress = None
         self.correlation = None
+
+        # Read OpenCL kernel file
+        path = imp.find_module('unrolr')[1]
+        fname = os.path.join(path, 'core/kernel.cl')
+
+        with open(fname) as f:
+            self._kernel = f.read()
 
     def _check_environnment_variable(self, variable):
         """
@@ -76,62 +87,16 @@ class Unrolr():
 
     def _spe(self, X):
         """
-        The Unrolr (pSPE + dihedral distance) method itself !
+        The Unrolr (pSPE + dihedral_distance/intermolecular_distance) method itself!
         """
-        alpha = self.learning_rate / float(self.n_iter)
+        alpha = self._learning_rate / float(self._n_iter)
 
         # Create context and queue
         ctx = cl.create_some_context()
         queue = cl.CommandQueue(ctx)
 
         # Compile kernel
-        program = cl.Program(ctx, """
-        __kernel void dihedral_distance(__global const float* a, __global float* r, int x, int size)
-            {
-                int i = get_global_id(0);
-                float tmp;
-
-                r[i] = 0.0;
-
-                for(int g=0; g<size; g++)
-                {
-                    r[i] += cos(a[x*size+g] - a[i*size+g]);
-                }
-
-                tmp = (1.0/size) * 0.5 * (size - r[i]);
-                r[i] = sqrt(tmp);
-            }
-
-        __kernel void euclidean_distance(__global const float* a, __global float* r, int x, int size, int ndim)
-            {
-                int i = get_global_id(0);
-
-                r[i] = 0.0;
-
-                for(int g=0; g<ndim; g++)
-                {
-                    r[i] += (a[g*size+i] - a[g*size+x]) * (a[g*size+i] - a[g*size+x]);
-                }
-
-                r[i] = sqrt(r[i]);
-            }
-
-        __kernel void spe(__global float* rij, __global float* dij, __global float* d,
-                          int x, int size, float rc, float learning_rate)
-            {
-                const float eps = 1e-10;
-                int i = get_global_id(0);
-                int j = get_global_id(1);
-
-                int index = i * size + j;
-                int pindex = i * size + x;
-
-                if (((rij[j] <= rc) || (rij[j] > rc && dij[j] < rij[j])) && (index != pindex))
-                {
-                    d[index] = d[index] + (learning_rate * ((rij[j]-dij[j])/(dij[j]+eps)) * (d[index]-d[pindex]));
-                }
-            }
-        """).build()
+        program = cl.Program(ctx, self._kernel).build()
 
         # Send dihedral angles to CPU/GPU
         X_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=X)
@@ -142,40 +107,45 @@ class Unrolr():
         dij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, tmp.nbytes)
 
         # Generate initial (random)
-        d = np.float32(np.random.rand(self.n_components, X.shape[0]))
+        d = np.float32(np.random.rand(self._n_components, X.shape[0]))
         # Send initial (random) embedding to the CPU/GPU
         d_buf = cl.Buffer(ctx, cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR, hostbuf=d)
 
-        freq_progression = self.n_iter / 100.
+        freq_progression = self._n_iter / 100.
 
-        for i in xrange(0, self.n_iter + 1):
-
-            if i % freq_progression == 0 and self.verbose:
-                percentage = float(i) / float(self.n_iter) * 100.
+        for i in xrange(0, self._n_iter + 1):
+            if i % freq_progression == 0 and self._verbose:
+                percentage = float(i) / float(self._n_iter) * 100.
                 sys.stdout.write("\rUnrolr Optimization         : %8.3f %%" % percentage)
                 sys.stdout.flush()
 
             # Choose random embedding (pivot)
             pivot = np.int32(np.random.randint(X.shape[0]))
 
-            # Compute dihedral distances
-            program.dihedral_distance(queue, (X.shape[0],), None, X_buf, rij_buf, 
-                                      pivot, np.int32(X.shape[1])).wait()
+            if self._metric == 'dihedral':
+                # Compute dihedral distances
+                program.dihedral_distance(queue, (X.shape[0],), None, X_buf, rij_buf, 
+                                          pivot, np.int32(X.shape[1])).wait()
+            elif self._metric == 'intramolecular':
+                # Compute intramolecular distance
+                program.intramolecular_distance(queue, (X.shape[0],), None, X_buf, rij_buf, 
+                                                pivot, np.int32(X.shape[1])).wait()
+
             # Compute euclidean distances
             program.euclidean_distance(queue, (d.shape[1],), None, d_buf, 
                                        dij_buf, pivot, np.int32(d.shape[1]), 
                                        np.int32(d.shape[0])).wait()
             # Stochastic Proximity Embbeding
             program.spe(queue, d.shape, None, rij_buf, dij_buf, d_buf, pivot, 
-                        np.int32(d.shape[1]), np.float32(self.r_neighbor), 
-                        np.float32(self.learning_rate)).wait()
+                        np.int32(d.shape[1]), np.float32(self._r_neighbor), 
+                        np.float32(self._learning_rate)).wait()
 
-            self.learning_rate -= alpha
+            self._learning_rate -= alpha
 
         # Get the last embedding d
         cl.enqueue_copy(queue, d, d_buf)
 
-        if self.verbose:
+        if self._verbose:
             print()
 
         self.embedding = d
@@ -185,56 +155,14 @@ class Unrolr():
         Dirty function to evaluate the final embedding
         """
         embedding = self.embedding
-        r_neighbor = self.r_neighbor
+        r_neighbor = self._r_neighbor
 
         # Creation du contexte et de la queue
         ctx = cl.create_some_context()
         queue = cl.CommandQueue(ctx)
 
         # On compile le kernel
-        program = cl.Program(ctx, """
-        __kernel void dihedral_distance(__global const float* a, __global float* r, int x, int size)
-            {
-                int i = get_global_id(0);
-                float tmp;
-
-                r[i] = 0.0;
-
-                for(int g=0; g<size; g++)
-                {
-                    r[i] += cos(a[x*size+g] - a[i*size+g]);
-                }
-
-                tmp = (1.0/size) * 0.5 * (size - r[i]);
-                r[i] = sqrt(tmp);
-            }
-
-        __kernel void euclidean_distance(__global const float* a, __global float* r, int x, int size, int ndim)
-            {
-                int i = get_global_id(0);
-
-                r[i] = 0.0;
-
-                for(int g=0; g<ndim; g++)
-                {
-                    r[i] += (a[g*size+i] - a[g*size+x]) * (a[g*size+i] - a[g*size+x]);
-                }
-
-                r[i] = sqrt(r[i]);
-            }
-
-        __kernel void stress(__global float* rij, __global float* dij, __global float* sij, float rc)
-            {
-                int i = get_global_id(0);
-
-                sij[i] = 0.0;
-
-                if ((rij[i] <= rc) || (dij[i] < rij[i]))
-                {
-                    sij[i] = ((dij[i]-rij[i])*(dij[i]-rij[i]))/(rij[i]);
-                }
-            }
-        """).build()
+        program = cl.Program(ctx, self._kernel).build()
 
         # Send dihedral angles and embedding on CPU/GPU
         e_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=embedding)
@@ -251,19 +179,24 @@ class Unrolr():
 
         tmp_correl = []
         tmp_sij_sum = 0.0
-        tmp_dij_sum = 0.0
+        tmp_rij_sum = 0.0
 
         old_stress = 999.
         old_correl = 999.
 
         while True:
-
             # Choose random conformation as pivot
             pivot = np.int32(np.random.randint(X.shape[0]))
 
-            # Dihedral distances
-            program.dihedral_distance(queue, (X.shape[0],), None, X_buf, rij_buf,
-                                       pivot, np.int32(X.shape[1])).wait()
+            if self._metric == 'dihedral':
+                # Dihedral distances
+                program.dihedral_distance(queue, (X.shape[0],), None, X_buf, rij_buf,
+                                           pivot, np.int32(X.shape[1])).wait()
+            elif self._metric == 'intramolecular':
+                # Dihedral distances
+                program.intramolecular_distance(queue, (X.shape[0],), None, X_buf, rij_buf,
+                                                pivot, np.int32(X.shape[1])).wait()
+
             # Euclidean distances
             program.euclidean_distance(queue, (embedding.shape[1],), None, e_buf,
                                         dij_buf, pivot, np.int32(embedding.shape[1]),
@@ -284,11 +217,11 @@ class Unrolr():
 
             # Compute current stress
             tmp_sij_sum += np.sum(sij[~np.isnan(sij)])
-            tmp_dij_sum += np.sum(dij)
-            stress = tmp_sij_sum / tmp_dij_sum
+            tmp_rij_sum += np.sum(rij)
+            stress = tmp_sij_sum / tmp_rij_sum
 
             # Test for convergence
-            if (np.abs(old_stress - stress) < self.epsilon) and (np.abs(old_correl - correl) < self.epsilon):
+            if (np.abs(old_stress - stress) < self._epsilon) and (np.abs(old_correl - correl) < self._epsilon):
                 self.correlation = correl
                 self.stress = stress
 
@@ -325,10 +258,10 @@ class Unrolr():
             fmt = "%012d,"
 
         # Create header and format
-        header = "r_neighbor %s n_iter %s" %(self.r_neighbor, self.n_iter)
+        header = "r_neighbor %s n_iter %s" %(self._r_neighbor, self._n_iter)
         header += " stress %s correlation %s" % (self.stress, self.correlation)
-        header += " seed %s" % self.random_seed
-        fmt += "%.5f" + (self.n_components - 1) * ",%.5f"
+        header += " seed %s" % self._random_seed
+        fmt += "%.5f" + (self._n_components - 1) * ",%.5f"
 
         # Save final embedding to txt file
         np.savetxt(fname, self.embedding, fmt=fmt, header=header)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Jérôme Eberhardt 2016-2017
+# Jérôme Eberhardt 2016-2018
 # Unrolr
 # Author: Jérôme Eberhardt <qksonoe@gmail.com>
 #
@@ -9,5 +9,6 @@
 
 
 from .dihedrals import Dihedral
+from .intramolecular_distances import IntramolecularDistance
 
-__all__ = ["Dihedral"]
+__all__ = ["Dihedral", "IntramolecularDistance"]
