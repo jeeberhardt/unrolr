@@ -1,5 +1,3 @@
-[![DOI](https://zenodo.org/badge/59756594.svg)](https://zenodo.org/badge/latestdoi/59756594)
-
 # Unrolr
 Conformational analysis of MD trajectories based on (pivot-based) Stochastic Proximity Embedding using dihedral distance as a metric. 
 
