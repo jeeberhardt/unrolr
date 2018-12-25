@@ -5,7 +5,7 @@
 # Unrolr
 #
 # Functions to plot results from Unrolr
-# Author: Jérôme Eberhardt <qksonoe@gmail.com>
+# Author: Jérôme Eberhardt <qksoneo@gmail.com>
 #
 # License: MIT
 
@@ -13,8 +13,8 @@
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.ticker as ticker
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.stats import iqr
 
 __author__ = "Jérôme Eberhardt"
@@ -48,6 +48,7 @@ def _assignbins_2d(coordinates, bin_size):
 
     return edges_x, edges_y
 
+
 def _get_limit_histogram(hist):
     """ Find the x and y limit of the histogram. Because we don't 
     want to plot the whole histogram, but only the part where 
@@ -68,8 +69,9 @@ def _get_limit_histogram(hist):
     
     return limit
 
-def plot_embedding(fname, embedding, label='Dihedral distance', clim=None, 
-                   bin_size=None, cmap='viridis', show=True):
+
+def plot_embedding(fname, embedding, label="Dihedral distance", clim=None, 
+                   bin_size=None, cmap="viridis", show=True):
     """ Plot 2D histogram of the embedding. The color code refers to the number
     of conformations in each bin of the histogram. """
     if bin_size is None:
@@ -90,7 +92,7 @@ def plot_embedding(fname, embedding, label='Dihedral distance', clim=None,
     fig, ax = plt.subplots(figsize=(15., 15.))
 
     extent = [edges_x[0], edges_x[-1], edges_y[0], edges_y[-1]]
-    plt.imshow(hist, interpolation=None, origin='low', extent=extent, 
+    plt.imshow(hist, interpolation=None, origin="low", extent=extent, 
                vmin=clim[0], vmax=clim[1], cmap=cmap)
 
     ax.set_xlim(edges_x[limit[0]] - 0.1, edges_x[limit[1]] + 0.1)
@@ -108,7 +110,7 @@ def plot_embedding(fname, embedding, label='Dihedral distance', clim=None,
     cb.ax.tick_params(labelsize=20)
     cb.set_clim(clim[0], clim[1])
 
-    plt.savefig(fname, dpi=300, bbox_inches='tight')
+    plt.savefig(fname, dpi=300, bbox_inches="tight")
 
     if show:
         plt.show()

@@ -5,7 +5,7 @@
 # Unrolr
 #
 # The core of Unrolr (pSPE + dihedral distance as metric)
-# Author: Jérôme Eberhardt <qksonoe@gmail.com>
+# Author: Jérôme Eberhardt <qksoneo@gmail.com>
 #
 # License: MIT
 
@@ -22,6 +22,7 @@ import numpy as np
 import pyopencl as cl
 
 from ..utils import read_dataset
+from ..utils import is_opencl_env_defined
 
 __author__ = "Jérôme Eberhardt"
 __copyright__ = "Copyright 2018, Jérôme Eberhardt"
@@ -35,24 +36,22 @@ class Unrolr():
 
     def __init__(self, r_neighbor, metric='dihedral', n_components=2, n_iter=10000,
                  random_seed=None, verbose=0):
-
         # Check PYOPENCL_CTX environnment variable
-        if not self._check_environnment_variable("PYOPENCL_CTX"):
+        if not is_opencl_env_defined():
             print("Error: The environnment variable PYOPENCL_CTX is not defined !")
             print("Tip: python -c \"import pyopencl as cl; cl.create_some_context()\"")
             sys.exit(1)
 
+        # pSPE parameters
         self._n_components = n_components
         self._r_neighbor = r_neighbor
         self._n_iter = n_iter
+        self._learning_rate = 1.0
+        self._epsilon = 1e-4
         self._metric = metric
         # Set numpy random state and verbose
         self._random_seed = self._set_random_state(random_seed)
         self._verbose = verbose
-
-        self._learning_rate = 1.0
-        self._epsilon = 1e-4
-
         # Output variable
         self.embedding = None
         self.stress = None
@@ -64,15 +63,6 @@ class Unrolr():
 
         with open(fname) as f:
             self._kernel = f.read()
-
-    def _check_environnment_variable(self, variable):
-        """
-        Check if an environnment variable exist or not
-        """
-        if os.environ.get(variable):
-            return True
-        else:
-            return False
 
     def _set_random_state(self, seed=None):
         """

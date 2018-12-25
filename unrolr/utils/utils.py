@@ -4,12 +4,15 @@
 # Jérôme Eberhardt 2016-2018
 # Unrolr
 #
-# Function to read and save data from/to a HDF5 file
-# Author: Jérôme Eberhardt <qksonoe@gmail.com>
+# Utils functions
+# Author: Jérôme Eberhardt <qksoneo@gmail.com>
 #
 # License: MIT
 
 
+from __future__ import print_function
+
+import os
 import sys
 
 import h5py
@@ -25,7 +28,7 @@ __email__ = "qksoneo@gmail.com"
 
 
 def read_dataset(fname, dname, start=0, stop=-1, skip=1):
-
+    """Read dataset from HDF5 file."""
     data = None
 
     try:
@@ -35,11 +38,13 @@ def read_dataset(fname, dname, start=0, stop=-1, skip=1):
             else:
                 return f[dname][start:stop:skip,]
     except IOError:
-        print("Error: cannot find file %s" % fname)
+        print("Error: cannot find file %s." % fname)
 
     return data
 
+
 def save_dataset(fname, dname, data):
+    """Save dataset to HDF5 file."""
     with h5py.File(fname, 'w') as w:
         try:
             dset = w.create_dataset(dname, (data.shape[0], data.shape[1]))
@@ -49,10 +54,25 @@ def save_dataset(fname, dname, data):
 
         w.flush()
 
-def get_max_conformations_from_dataset(fname, dname):
-    """ Return the maximum number of conformations that
-    can fit into the memory of the selected OpenCL device
-    and also the step/interval """
+
+def is_opencl_env_defined():
+    """Check if OpenCL env. variable is defined."""
+    variable_name = "PYOPENCL_CTX"
+    if os.environ.get(variable_name):
+        return True
+    else:
+        return False
+
+
+def max_conformations_from_dataset(fname, dname):
+    """Get maximum number of conformations that can fit
+    into the memory of the selected OpenCL device and
+    also the step/interval """
+    if not is_opencl_env_defined():
+        print("Error: The environnment variable PYOPENCL_CTX is not defined.")
+        print("Tip: python -c \"import pyopencl as cl; cl.create_some_context()\"")
+        sys.exit(1)
+
     ctx = cl.create_some_context()
     max_size = int(ctx.devices[0].max_mem_alloc_size)
 
@@ -62,7 +82,7 @@ def get_max_conformations_from_dataset(fname, dname):
             n_conf, n_dim = f[dname].shape
             data_size = bytes_size * n_conf * n_dim
     except IOError:
-        print("Error: cannot find file %s" % fname)
+        print("Error: cannot find file %s." % fname)
 
     if data_size > max_size:
         """ Return the first interval that produces a dataset
@@ -74,6 +94,6 @@ def get_max_conformations_from_dataset(fname, dname):
                     return (n_conf / i, i)
 
         # Return None if we didn't find anything
-        return None
+        return (None, None)
     else:
         return (data_shape[0], 1)

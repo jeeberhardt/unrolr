@@ -21,7 +21,7 @@ install_reqs.append('setuptools')
 
 
 setup(name='unrolr',
-      version=0.3,
+      version=0.4,
       description='Dimensionality reduction method for MD trajectories',
       author='Jérôme Eberhardt',
       author_email='qksoneo@gmail.com',

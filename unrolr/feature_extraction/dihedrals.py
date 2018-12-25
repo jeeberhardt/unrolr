@@ -5,7 +5,7 @@
 # Unrolr
 #
 # Extract calpha or phi/psi dihedral angles from trajectories
-# Author: Jérôme Eberhardt <qksonoe@gmail.com>
+# Author: Jérôme Eberhardt <qksoneo@gmail.com>
 #
 # License: MIT
 
@@ -30,7 +30,7 @@ __email__ = "qksoneo@gmail.com"
 
 
 class Dihedral(AnalysisBase):
-    def __init__(self, top_file, trj_files, selection='backbone', dihedral_type='calpha', **kwargs):
+    def __init__(self, top_file, trj_files, selection="backbone", dihedral_type="calpha", **kwargs):
         # Used to store the result
         self.result = []
         # Where we will store all the atomgroups for each ca dihedral
@@ -58,13 +58,13 @@ class Dihedral(AnalysisBase):
         #   = b0 minus component that aligns with b1
         # w = projection of b2 onto plane perpendicular to b1
         #   = b2 minus component that aligns with b1
-        v = b0 - np.einsum('ij,ij->i', b0, b1)[:,None] * b1
-        w = b2 - np.einsum('ij,ij->i', b2, b1)[:,None] * b1
+        v = b0 - np.einsum("ij,ij->i", b0, b1)[:, None] * b1
+        w = b2 - np.einsum("ij,ij->i", b2, b1)[:, None] * b1
 
         # angle between v and w in a plane is the torsion angle
         # v and w may not be normalized but that's fine since tan is y/x
-        x = np.einsum('ij,ij->i', v, w)
-        y = np.einsum('ij,ij->i', np.cross(b1, v), w)
+        x = np.einsum("ij,ij->i", v, w)
+        y = np.einsum("ij,ij->i", np.cross(b1, v), w)
         return np.arctan2(y, x)
 
     def _prepare(self):
@@ -77,7 +77,7 @@ class Dihedral(AnalysisBase):
             # Get list of selected residus from segid
             residues = np.unique(s_seg.resnums)
 
-            if self._dihedral_type == 'calpha':
+            if self._dihedral_type == "calpha":
                 # Identify groups of continuous residues and group them in sublist
                 fragments = []
                 for k, g in groupby(enumerate(residues), lambda (i, x): i - x):
@@ -87,11 +87,11 @@ class Dihedral(AnalysisBase):
                     if len(fragment) >= 4:
                         for residu in fragment[0:-3]:
                             select_str = "(resid %s or resid %s or resid %s or resid %s) and name CA"
-                            select_str = select_str % (residu, residu+1, residu+2, residu+3)
+                            select_str = select_str % (residu, residu + 1, residu + 2, residu + 3)
                             dihedral = s_seg.select_atoms(select_str)
                             self._atom_ix.extend(list(dihedral.ix))
 
-            elif self._dihedral_type == 'backbone':
+            elif self._dihedral_type == "backbone":
                 for residu in residues[2:-2]:
                     phi = s_seg.residues[residu].phi_selection()
                     psi = s_seg.residues[residu].psi_selection()
