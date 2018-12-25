@@ -6,10 +6,12 @@ Conformational analysis of MD trajectories using (pivot-based) Stochastic Proxim
 First load of the functions needed from the Unrolr package
 
 ```python
+import numpy as np
+
 from unrolr import Unrolr
 from unrolr.feature_extraction import Dihedral
-from unrolr.optimize import find_optimal_r_neighbor, find_optimal_n_iter
-from unrolr.plotting import plot_optimization
+from unrolr.sampling import neighborhood_radius_sampler, optimization_cycle_sampler
+from unrolr.plotting import plot_sampling
 from unrolr.utils import save_dataset
 ```
 
@@ -37,11 +39,12 @@ Now the next big step will be the determination of the optimal neighborhood radi
 As the optimal value of rc depends of the studied system, we can quickly test multiple value, and choose one that will minimizes the stress and maximizes the correlation between the distances in high dimension space and 2D dimension space. For this, we will systematically test different values of rc from 0.01 to 0.5 by increments of 0.01. However, for the sake of effeciency, we won't use all the conformations (10.000 in our case), but just a reduced set with 5.000 conformations only. For this reduced set, 5 successive independent runs of pSPE are performed, with 5.000 steps of optimization cycles.
 
 ```python
-# Warning: This function does not find the optimal value, because there is no consensus on how to find it for the moment
-df = find_optimal_r_neighbor(X[::2,], r_parameters=[0.1, 0.5, 0.01], n_iter=5000, n_runs=5)
+# We will sample neighorhood radius every 0.05
+r_neighbors = np.linspace(0.1, 1.0, (1 / 0.05) - 1)
 
-plot_optimization('outputs/r_neighbor_vs_stress-correlation.png', df, of='r_neighbor')
-df.to_csv('outputs/r_neighbor_vs_stress-correlation.csv', index=False)
+df = neighborhood_radius_sampler(X[::2,], r_neighbors, n_iter=5000, n_runs=5)
+df.to_csv('r_neighbor_vs_stress_correlation.csv', index=False)
+plot_sampling('r_neighbor_vs_stress_correlation.png', df, of='r_neighbor', show=False)
 ```
 
 As output, you will find a file, named ```r_neighbor_vs_stress-correlation.csv```, containing all the results, the stress and the correlation in function of the neighbourhood radius rc for each pSPE run, and the plot corresponding, named ```r_neighbor_vs_stress-correlation.png```.
@@ -57,11 +60,11 @@ The correlation between the actual and the projected distances increases as the 
 Generally, from my personal experience, the minimal number of optimization cycles needed is similar and independent of the nature and the size of the studied system, between 10.000 and 50.000 cycles. But still, we can test the influence of the number of pSPE optimization cycles on the correlation and the stress, while keeping the value of rc fixed at 0.27.
 
 ```python
-# Warning: This function does not find the optimal value, because there is no consensus on how to find it for the moment
-df = find_optimal_n_iter(X[::2,], n_iters=(10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000), r_neighbor=0.27, n_runs=5)
+n_iters = [500, 1000, 5000, 10000, 50000, 100000]
 
-plot_optimization('outputs/n_iter_vs_stress-correlation.png', df, of='n_iter')
-df.to_csv('outputs/n_iter_vs_stress-correlation.csv', index=False)
+df = optimization_cycle_sampler(X[::2,], n_iters, r_neighbor=0.27)
+df.to_csv('n_iter_vs_stress_correlation.csv', index=False)
+plot_sampling('n_iter_vs_stress_correlation.png', df, of='n_iter', show=False)
 ```
 
 As output, you will find this time a file (named ```n_iter_vs_stress-correlation.csv```) containing all the results, the stress and the correlation in function of the number of optimization cycles for each pSPE run, and the plot corresponding (named ```n_iter_vs_stress-correlation.png```).
@@ -82,7 +85,7 @@ U.fit(X)
 U.save(fname='outputs/embedding.csv') 
 
 # Or you can add an extra column with frame ids (frames=(start, stop, skip))
-# U.save(fname='outputs/embedding.csv', frames=np.arange(0, X.shape[0], 1))
+# U.save(fname='outputs/embedding.csv', frames=np.arange(0, X.shape[0]))
 
 print U.stress, U.correlation
 ```
