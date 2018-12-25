@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Jérôme Eberhardt 2016-2017
+# Jérôme Eberhardt 2016-2018
 # Unrolr
-# Author: Jérôme Eberhardt <qksonoe@gmail.com>
+# Author: Jérôme Eberhardt <qksoneo@gmail.com>
 #
 # License: MIT
 
-from .plot_optimize import plot_optimization
+from .plot_sampling import plot_sampling
+from .plot_embedding import plot_embedding
 
-__all__ = ['plot_optimization']
+__all__ = ["plot_sampling", "plot_embedding"]

@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Jérôme Eberhardt 2016-2017
+# Jérôme Eberhardt 2016-2018
 # Unrolr
 #
 # Functions to plot results from Unrolr
-# Author: Jérôme Eberhardt <qksonoe@gmail.com>
+# Author: Jérôme Eberhardt <qksoneo@gmail.com>
 #
 # License: MIT
 
@@ -14,13 +14,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-def plot_optimization(fname, df, of, show=True):
+__author__ = "Jérôme Eberhardt"
+__copyright__ = "Copyright 2018, Jérôme Eberhardt"
+
+__lience__ = "MIT"
+__maintainer__ = "Jérôme Eberhardt"
+__email__ = "qksoneo@gmail.com"
+
+
+def plot_sampling(fname, df, of="r_neighbor", show=True):
 
     xlabel = r"Neighborhood $r_{c}$"
     logx = False
 
-    if of == 'n_iter':
-        xlabel = '#Cycles'
+    if of == "n_iter":
+        xlabel = "#Cycles"
         logx = True
 
     fig, ax = plt.subplots(figsize=(15, 5))

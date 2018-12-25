@@ -5,7 +5,7 @@
 # Unrolr
 #
 # Extract intramolecular distances from trajectories
-# Author: Jérôme Eberhardt <qksonoe@gmail.com>
+# Author: Jérôme Eberhardt <qksoneo@gmail.com>
 #
 # License: MIT
 
