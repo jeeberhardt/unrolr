@@ -77,6 +77,8 @@ export PYOPENCL_CTX='0:1'
 ## Example
 
 ```python
+from __future__ import print_function
+
 from unrolr import Unrolr
 from unrolr.feature_extraction import Dihedral
 from unrolr.utils import save_dataset
@@ -95,11 +97,11 @@ U = Unrolr(r_neighbor=0.27, n_iter=50000, verbose=1)
 U.fit(X)
 U.save(fname='embedding.csv')
 
-print U.stress, U.correlation
+print('%4.2f %4.2f' % (U.stress, U.correlation))
 ```
 
 ## Todo list
-- [ ] Compatibility with python 3
+- [x] Compatibility with python 3
 - [x] Compatibility with the latest version of MDAnalysis (==0.17)
 - [ ] Unit tests
 - [ ] Accessible directly from pip
