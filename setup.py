@@ -11,21 +11,22 @@ from setuptools import setup, find_packages
 
 
 PROJECT_ROOT = dirname(realpath(__file__))
-
 REQUIREMENTS_FILE = join(PROJECT_ROOT, 'requirement.txt')
 
 with open(REQUIREMENTS_FILE) as f:
     install_reqs = f.read().splitlines()
-
 install_reqs.append('setuptools')
 
+with open("README.md", "r") as fh:
+    long_description = fh.read()
 
 setup(name='unrolr',
       version=0.4,
-      description='Dimensionality reduction method for MD trajectories',
       author='Jérôme Eberhardt',
       author_email='qksoneo@gmail.com',
-      url='https//github.com/jeeberhardt/unrolr',
+      description='Dimensionality reduction method for MD trajectories',
+      long_description=long_description,
+      long_description_content_type='text/markdown',
       packages=find_packages(),
       package_data={'': ['LICENSE',
                          'README.md',
@@ -43,6 +44,7 @@ setup(name='unrolr',
       classifiers=[
             'License :: OSI Approved :: MIT License',
             'Programming Language :: Python :: 2.7',
+            'Programming Language :: Python :: 3.6',
             'Operating System :: Unix',
             'Operating System :: MacOS',
             'Topic :: Scientific/Engineering'
