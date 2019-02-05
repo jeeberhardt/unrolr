@@ -80,8 +80,12 @@ class Dihedral(AnalysisBase):
             if self._dihedral_type == "calpha":
                 # Identify groups of continuous residues and group them in sublist
                 fragments = []
-                for k, g in groupby(enumerate(residues), lambda (i, x): i - x):
-                    fragments.append(map(itemgetter(1), g))
+
+                # https://stackoverflow.com/questions/2154249/identify-groups-of-continuous-numbers-in-a-list
+                for k, g in groupby(enumerate(residues), lambda x: x[0] - x[1]):
+                    group = (map(itemgetter(1), g))
+                    group = list(map(int, group))
+                    fragments.append(group)
 
                 for fragment in fragments:
                     if len(fragment) >= 4:
