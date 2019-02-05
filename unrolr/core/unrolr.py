@@ -103,7 +103,7 @@ class Unrolr():
 
         freq_progression = self._n_iter / 100.
 
-        for i in xrange(0, self._n_iter + 1):
+        for i in range(0, self._n_iter + 1):
             if i % freq_progression == 0 and self._verbose:
                 percentage = float(i) / float(self._n_iter) * 100.
                 sys.stdout.write("\rUnrolr Optimization         : %8.3f %%" % percentage)
