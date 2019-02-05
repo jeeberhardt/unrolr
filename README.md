@@ -25,7 +25,13 @@ I highly recommand you to install the Anaconda distribution (https://www.continu
 
 For any other informations, the official installation guide of PyOpenCL is available [here](https://documen.tician.de/pyopencl/misc.html).
 
-2 . As a final step, 
+2 . As a final step, installation from PyPi server
+```bash
+pip install unrolr
+```
+
+Or from the source
+
 ```bash
 # Get the package
 wget https://github.com/jeeberhardt/unrolr/archive/master.zip
@@ -37,7 +43,7 @@ cd unrolr-master
 python setup.py install
 ```
 
-If somehow pip is having problem to install all the dependencies,
+And if somehow pip is having problem to install all the dependencies,
 ```bash
 conda config --append channels conda-forge
 conda install pyopencl mdanalysis
@@ -104,7 +110,7 @@ print('%4.2f %4.2f' % (U.stress, U.correlation))
 - [x] Compatibility with python 3
 - [x] Compatibility with the latest version of MDAnalysis (==0.17)
 - [ ] Unit tests
-- [ ] Accessible directly from pip
+- [x] Accessible directly from pip
 - [ ] Improve OpenCL performance (global/local memory)
 
 ## Citation
