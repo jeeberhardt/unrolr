@@ -107,6 +107,7 @@ print('%4.2f %4.2f' % (U.stress, U.correlation))
 ```
 
 ## Todo list
+- [ ] Compare SPE performance with UMAP
 - [x] Compatibility with python 3
 - [x] Compatibility with the latest version of MDAnalysis (==0.17)
 - [ ] Unit tests
