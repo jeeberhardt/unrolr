@@ -19,13 +19,19 @@ I highly recommand you to install the Anaconda distribution (https://www.continu
 
 1 . First, you have to install OpenCL:
 * MacOS: Good news, you don't have to install OpenCL, it works out-of-the-box. (Update: bad news, OpenCL is now depreciated in macOS 10.14. Thanks Apple.)
-* AMD:  You have to install the [AMD OpenCL™ 2.0 Driver](https://support.amd.com/en-us/kb-articles/Pages/OpenCL2-Driver.aspx).
+* AMD:  You have to install the [AMDGPU graphics stack](https://amdgpu-install.readthedocs.io/en/amd-18.30/index.html).
 * Nvidia: You have to install the [CUDA toolkit](https://developer.nvidia.com/cuda-downloads).
 * Intel: And of course it's working also on CPU just by installing this [runtime software package](https://software.intel.com/en-us/articles/opencl-drivers). Alternatively, the CPU-based OpenCL driver can be also installed through the package ```pocl``` (http://portablecl.org/) with the conda package manager.
 
 For any other informations, the official installation guide of PyOpenCL is available [here](https://documen.tician.de/pyopencl/misc.html).
 
-2 . As a final step, 
+2 . As a final step, installation from PyPi server
+```bash
+pip install unrolr
+```
+
+Or from the source
+
 ```bash
 # Get the package
 wget https://github.com/jeeberhardt/unrolr/archive/master.zip
@@ -37,7 +43,7 @@ cd unrolr-master
 python setup.py install
 ```
 
-If somehow pip is having problem to install all the dependencies,
+And if somehow pip is having problem to install all the dependencies,
 ```bash
 conda config --append channels conda-forge
 conda install pyopencl mdanalysis
@@ -101,10 +107,11 @@ print('%4.2f %4.2f' % (U.stress, U.correlation))
 ```
 
 ## Todo list
+- [ ] Compare SPE performance with UMAP
 - [x] Compatibility with python 3
 - [x] Compatibility with the latest version of MDAnalysis (==0.17)
 - [ ] Unit tests
-- [ ] Accessible directly from pip
+- [x] Accessible directly from pip
 - [ ] Improve OpenCL performance (global/local memory)
 
 ## Citation
