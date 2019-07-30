@@ -17,11 +17,11 @@ with open(REQUIREMENTS_FILE) as f:
     install_reqs = f.read().splitlines()
 install_reqs.append('setuptools')
 
-with open("README.md", "r") as fh:
+with open('README.md', 'r') as fh:
     long_description = fh.read()
 
 setup(name='unrolr',
-      version=0.4.0.1,
+      version='0.4.0.1',
       author='Jérôme Eberhardt',
       author_email='qksoneo@gmail.com',
       description='Dimensionality reduction method for MD trajectories',
