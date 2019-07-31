@@ -23,7 +23,20 @@ __email__ = "qksoneo@gmail.com"
 
 
 def neighborhood_radius_sampler(X, r_neighbors, metric="dihedral", n_components=2, n_iter=5000, n_runs=5):
-    """Sample different neighborhood radius rc."""
+    """Sample different neighborhood radius rc and compute the stress and correlation.
+    
+    Args:
+        X (ndarray): n-dimensional ndarray (rows: frames; columns: features/angles)
+        r_neighbors (array-like): list of the neighborhood raidus cutoff to try
+        metric (str): metric to use to compute distance between conformations (choices: diehedral or intramolecular) (default: dihedral)
+        n_components (int): number of dimension of the embedding
+        n_iter (int): number of optimization cycles
+        n_runs (int): number of repetitions, in order to calculate standard deviation
+
+    Returns:
+        results (DataFrame): Pandas DataFrame containing columns ["run", "r_neighbor", "n_iter", "stress", "correlation"]
+
+    """
     columns = ["run", "r_neighbor", "n_iter", "stress", "correlation"]
     data = []
 
@@ -41,7 +54,20 @@ def neighborhood_radius_sampler(X, r_neighbors, metric="dihedral", n_components=
 
 def optimization_cycle_sampler(X, n_iters, r_neighbor, metric="dihedral", n_components=2, n_runs=5):
     """Sample different number of optimization cycle with a certain
-    neighborhood radius rc and compute the stress and correlation."""
+    neighborhood radius rc and compute the stress and correlation.
+    
+    Args:
+        X (ndarray): n-dimensional ndarray (rows: frames; columns: features/angles)
+        n_iters (array-like): list of the iteration numbers to try
+        r_neighbor (float): neighborhood raidus cutoff
+        metric (str): metric to use to compute distance between conformations (choices: diehedral or intramolecular) (default: dihedral)
+        n_components (int): number of dimension of the embedding
+        n_runs (int): number of repetitions, in order to calculate standard deviation
+
+    Returns:
+        results (DataFrame): Pandas DataFrame containing columns ["run", "r_neighbor", "n_iter", "stress", "correlation"]
+
+    """
     columns = ["run", "r_neighbor", "n_iter", "stress", "correlation"]
     data = []
 

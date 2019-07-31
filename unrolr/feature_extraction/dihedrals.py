@@ -31,6 +31,15 @@ __email__ = "qksoneo@gmail.com"
 
 class Dihedral(AnalysisBase):
     def __init__(self, top_file, trj_files, selection="backbone", dihedral_type="calpha", **kwargs):
+        """Create Dihedral analysis object.
+        
+        Args:
+            top_file (str): filename of the topology file
+            trj_files (str or array-like): one or a list of trajectory files
+            selection (str): protein selection (default: backbone)
+            dihedral_type (str): type of dihedral angles to extract (choices: dihedral or calpha) (default: backbone)
+
+        """
         # Used to store the result
         self.result = []
         # Where we will store all the atomgroups for each ca dihedral
@@ -110,7 +119,19 @@ class Dihedral(AnalysisBase):
 
 
 def main():
+    """Main function, dihedral.py can be executed as a standalone script
+    
+    Args:
+        -p/--top (filename): topology file used for simulation (pdb, psf)
+        -t/--trj (filename): one or list of trajectory files
+        -s/--selection (str): protein selection
+        -d/--dihedral (str): type of dihedral angles to extract (choices: dihedral or calpha) (default: backbone)
+        -o/--output (filename): hdf5 output file name (default: dihedral_angles.h5)
 
+    Returns:
+        output (file): hdf5 file containing the dihedral angles (default: dihedral_angles.h5)
+
+    """
     parser = argparse.ArgumentParser(description="Extract CA dihedral angles")
     parser.add_argument("-p", "--top", dest="top_file", required=True,
                         action="store", type=str,

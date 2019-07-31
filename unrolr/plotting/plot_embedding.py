@@ -72,8 +72,18 @@ def _get_limit_histogram(hist):
 
 def plot_embedding(fname, embedding, label="Dihedral distance", clim=None, 
                    bin_size=None, cmap="viridis", show=True):
-    """ Plot 2D histogram of the embedding. The color code refers to the number
-    of conformations in each bin of the histogram. """
+    """Plot 2D histogram of the embedding. The color code refers to the number
+    of conformations in each bin of the histogram. 
+    
+    Args:
+        fname (str): filename of the embedding plot
+        embedding (ndarray): n-dimensional embedding array (rows: frames, columns: dimensions)
+        clim (array-like): list of two element: minimum and maximum bin number (default: None)
+        bin_size (float): size of the bin. if None, use interquartile range (IQR) to define the bin size (default: None)
+        cmap (str): color map (default: viridis)
+        show (bool): show the plot (default: True)
+
+    """
     if bin_size is None:
         bin_size = 2. * (np.mean(iqr(embedding, axis=0)) / np.power(embedding.shape[0], 1./3))
 
