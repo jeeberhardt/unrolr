@@ -20,7 +20,7 @@ classifiers=[
     'Topic :: Scientific/Engineering']
 
 [tool.poetry.dependencies]
-python = "~2.7 || ^3.6"
+python = "~2.7 || >=3.6"
 pyopencl = ">=2015.1"
 matplotlib = ">=1.4.3"
 MDAnalysis = ">=0.17.0"
