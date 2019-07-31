@@ -1,3 +1,5 @@
+[![Documentation Status](https://readthedocs.org/projects/unrolr/badge/?version=latest)](https://unrolr.readthedocs.io/en/latest/?badge=latest)
+
 # Unrolr
 Conformational analysis of MD trajectories based on (pivot-based) Stochastic Proximity Embedding using dihedral distance as a metric (https://github.com/jeeberhardt/unrolr).
 
