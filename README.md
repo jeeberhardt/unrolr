@@ -38,14 +38,11 @@ $ conda install -c conda-forge mkl numpy scipy pandas matplotlib h5py MDAnalysis
 $ pip install unrolr
 ```
 
-... or from the source
+... or from the source directly
 
 ```bash
-# Get the package
-$ wget https://github.com/jeeberhardt/unrolr/archive/master.zip
-$ unzip unrolr-master.zip
-$ rm unrolr-master.zip
-$ cd unrolr-master
+$ git clone https://github.com/jeeberhardt/unrolr
+$ cd unrolr
 
 # Install the package
 $ python setup.py install
