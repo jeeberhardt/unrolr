@@ -76,7 +76,7 @@ Set the environment variable PYOPENCL_CTX='0:1' to avoid being asked again.
 Now you can set the environment variable.
 
 ```bash
-export PYOPENCL_CTX='0:1'
+$ export PYOPENCL_CTX='0:1'
 ```
 
 ## Example
