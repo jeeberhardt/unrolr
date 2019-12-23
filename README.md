@@ -42,13 +42,13 @@ $ pip install unrolr
 
 ```bash
 # Get the package
-wget https://github.com/jeeberhardt/unrolr/archive/master.zip
-unzip unrolr-master.zip
-rm unrolr-master.zip
-cd unrolr-master
+$ wget https://github.com/jeeberhardt/unrolr/archive/master.zip
+$ unzip unrolr-master.zip
+$ rm unrolr-master.zip
+$ cd unrolr-master
 
 # Install the package
-python setup.py install
+$ python setup.py install
 ```
 
 ## OpenCL context
@@ -56,7 +56,7 @@ python setup.py install
 Before running Unrolr, you need to define the OpenCL context. And it is a good way to see if everything is working correctly.
 
 ```bash
-python -c 'import pyopencl as cl; cl.create_some_context()'
+$ python -c 'import pyopencl as cl; cl.create_some_context()'
 ```
 
 Here in my example, I have the choice between 3 differents computing device (2 graphic cards and one CPU). 
