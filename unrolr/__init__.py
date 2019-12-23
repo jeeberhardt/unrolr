@@ -9,3 +9,4 @@
 
 
 from .core.unrolr import Unrolr
+from .core.unrolr import PCA

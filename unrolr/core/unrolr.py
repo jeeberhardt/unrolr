@@ -21,7 +21,7 @@ import h5py
 import numpy as np
 import pyopencl as cl
 
-from pca import PCA
+from .pca import PCA
 from ..utils import read_dataset
 from ..utils import is_opencl_env_defined
 from ..utils import transform_dihedral_to_metric
