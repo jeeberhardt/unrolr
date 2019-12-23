@@ -43,9 +43,7 @@ $ pip install unrolr
 ```bash
 $ git clone https://github.com/jeeberhardt/unrolr
 $ cd unrolr
-
-# Install the package
-$ python setup.py install
+$ python setup.py build install
 ```
 
 ## OpenCL context
