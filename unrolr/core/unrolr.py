@@ -21,8 +21,11 @@ import h5py
 import numpy as np
 import pyopencl as cl
 
+from pca import PCA
 from ..utils import read_dataset
 from ..utils import is_opencl_env_defined
+from ..utils import transform_dihedral_to_metric
+from ..utils import transform_dihedral_to_circular_mean
 
 __author__ = "Jérôme Eberhardt"
 __copyright__ = "Copyright 2018, Jérôme Eberhardt"
@@ -35,7 +38,7 @@ __email__ = "qksoneo@gmail.com"
 class Unrolr():
 
     def __init__(self, r_neighbor, metric='dihedral', n_components=2, n_iter=10000,
-                 random_seed=None, verbose=0):
+                 random_seed=None, init="pca", verbose=0):
         # Check PYOPENCL_CTX environnment variable
         if not is_opencl_env_defined():
             print("Error: The environnment variable PYOPENCL_CTX is not defined !")
@@ -47,9 +50,10 @@ class Unrolr():
         self._r_neighbor = r_neighbor
         self._n_iter = n_iter
         self._learning_rate = 1.0
-        self._epsilon = 1e-4
+        self._epsilon = 1e-5
         self._metric = metric
         # Set numpy random state and verbose
+        self._init = init
         self._random_seed = self._set_random_state(random_seed)
         self._verbose = verbose
         # Output variable
@@ -96,9 +100,19 @@ class Unrolr():
         rij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, tmp.nbytes)
         dij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, tmp.nbytes)
 
-        # Generate initial (random)
-        d = np.float32(np.random.rand(self._n_components, X.shape[0]))
-        # Send initial (random) embedding to the CPU/GPU
+        if self._init == "pca":
+            if self._metric == "dihedral":
+                #X = transform_dihedral_to_metric(X)
+                X = transform_dihedral_to_circular_mean(X)
+
+            pca = PCA(self._n_components)
+            d = pca.fit_transform(X)
+            d = np.ascontiguousarray(d.T, dtype=np.float32)
+        else:
+            # Generate initial (random)
+            d = np.float32(np.random.rand(self._n_components, X.shape[0]))
+
+        # Send initial embedding to the CPU/GPU
         d_buf = cl.Buffer(ctx, cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR, hostbuf=d)
 
         freq_progression = self._n_iter / 100.
@@ -131,6 +145,12 @@ class Unrolr():
                         np.float32(self._learning_rate)).wait()
 
             self._learning_rate -= alpha
+
+            if i % 1000 == 0:
+                cl.enqueue_copy(queue, d, d_buf)
+                self.embedding = d
+                self._evaluate_embedding(X)
+                print('%4.2f %4.2f' % (self.stress, self.correlation))
 
         # Get the last embedding d
         cl.enqueue_copy(queue, d, d_buf)

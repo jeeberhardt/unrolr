@@ -55,6 +55,72 @@ def save_dataset(fname, dname, data):
         w.flush()
 
 
+def transform_dihedral_to_metric(dihedral_timeseries):
+    """Convert angles in radians to sine/cosine transformed coordinates.
+
+    The output will be used as the PCA input for dihedral PCA (dPCA)
+    
+    Args:
+        dhedral_timeseries (ndarray): array containing dihedral angles, shape (n_samples, n_features)
+
+    Returns:
+        ndarray: sine/cosine transformed coordinates
+
+    """
+    new_shape = (dihedral_timeseries.shape[0] * 2, dihedral_timeseries.shape[1])
+
+    data = np.zeros(shape=new_shape, dtype=np.float32)
+
+    for i in range(dihedral_timeseries.shape[0]):
+        data[(i * 2)] = np.cos(dihedral_timeseries[i])
+        data[(i * 2) + 1] = np.sin(dihedral_timeseries[i])
+
+    return data
+
+
+def transform_dihedral_to_circular_mean(dihedral_timeseries):
+    """Convert angles in radians to circular mean transformed angles.
+
+    The output will be used as the PCA input for dihedral PCA+ (dPCA+)
+    
+    Args:
+        dhedral_timeseries (ndarray): array containing dihedral angles, shape (n_samples, n_features)
+
+    Returns:
+        ndarray: circular mean transformed angles
+
+    """
+    cm = np.zeros(shape=dihedral_timeseries.shape, dtype=np.float32)
+    
+    # Create a flat view of the numpy arrays.
+    cmf = cm.ravel()
+    dtf = dihedral_timeseries.ravel()
+
+    x = np.cos(dtf)
+    y = np.sin(dtf)
+
+    # In order to avoid undefined mean angles
+    zero_y = np.where(y == 0.)[0]
+    if zero_y.size > 0:
+        y[zero_y] += 1E6
+
+    # Cases x > 0 and x < 0 are combined together
+    nonzero_x = np.where(x != 0.)
+    neg_x = np.where(x < 0.)
+    sign_y = np.sign(y)
+    # 1. x > 0
+    cmf[nonzero_x] = np.arctan(y[nonzero_x] / x[nonzero_x])
+    # 2. x < 0
+    cmf[neg_x] += sign_y[neg_x] * np.pi 
+
+    # Case when x equal to 0
+    zero_x = np.where(x == 0.)[0]
+    if zero_x.size > 0:
+        cmf[zero_x] = sign_y[zero_x] * (np.pi / 2.)
+
+    return cm
+
+
 def is_opencl_env_defined():
     """Check if OpenCL env. variable is defined."""
     variable_name = "PYOPENCL_CTX"
