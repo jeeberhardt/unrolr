@@ -7,27 +7,39 @@ Conformational analysis of MD trajectories based on (pivot-based) Stochastic Pro
 
 You need, at a minimum (requirements.txt):
 
-* Python 2.7
+* Python
 * NumPy
 * H5py
 * Pandas
 * Matplotlib
 * PyOpenCL
-* MDAnalysis (>=0.17)
+* MDAnalysis
 
 ## Installation on UNIX (Debian/Ubuntu)
 
-I highly recommand you to install the Anaconda distribution (https://www.continuum.io/downloads) if you want a clean python environnment with nearly all the prerequisites already installed (NumPy, H5py, Pandas, Matplotlib).
-
 1 . First, you have to install OpenCL:
-* MacOS: Good news, you don't have to install OpenCL, it works out-of-the-box. 
-* AMD:  You have to install the [AMD OpenCL™ 2.0 Driver](https://support.amd.com/en-us/kb-articles/Pages/OpenCL2-Driver.aspx).
+* MacOS: Good news, you don't have to install OpenCL, it works out-of-the-box. (Update: bad news, OpenCL is now depreciated in macOS 10.14. Thanks Apple.)
+* AMD:  You have to install the [AMDGPU graphics stack](https://amdgpu-install.readthedocs.io/en/amd-18.30/index.html).
 * Nvidia: You have to install the [CUDA toolkit](https://developer.nvidia.com/cuda-downloads).
-* Intel: And of course it's working also on CPU just by installing this [runtime software package](https://software.intel.com/en-us/articles/opencl-drivers). Alternatively, the CPU-based OpenCL driver can be also installed through the package ```pocl``` (http://portablecl.org/) with the conda package manager.
+* Intel: And of course it's working also on CPU just by installing this [runtime software package](https://software.intel.com/en-us/articles/opencl-drivers). Alternatively, the CPU-based OpenCL driver can be also installed through the package ```pocl``` (http://portablecl.org/) using Anaconda.
 
 For any other informations, the official installation guide of PyOpenCL is available [here](https://documen.tician.de/pyopencl/misc.html).
 
-2 . As a final step, 
+2 . I highly recommand you to install the Anaconda distribution (https://www.continuum.io/downloads) if you want a clean python environnment with nearly all the prerequisites already installed. To install everything properly, you just have to do this:
+
+```bash
+$ conda create -n unrolr python=3
+$ conda activate unrolr
+$ conda install -c conda-forge mkl numpy scipy pandas matplotlib h5py MDAnalysis pyopencl ocl-icd-system
+```
+
+3. Install unrolr
+```bash
+$ pip install unrolr
+```
+
+... or from the source
+
 ```bash
 # Get the package
 wget https://github.com/jeeberhardt/unrolr/archive/master.zip
@@ -36,15 +48,6 @@ rm unrolr-master.zip
 cd unrolr-master
 
 # Install the package
-python setup.py install
-```
-
-If somehow pip is having problem to install all the dependencies,
-```bash
-conda config --append channels conda-forge
-conda install pyopencl mdanalysis
-
-# Try again
 python setup.py install
 ```
 
@@ -79,6 +82,8 @@ export PYOPENCL_CTX='0:1'
 ## Example
 
 ```python
+from __future__ import print_function
+
 from unrolr import Unrolr
 from unrolr.feature_extraction import Dihedral
 from unrolr.utils import save_dataset
@@ -97,18 +102,19 @@ U = Unrolr(r_neighbor=0.27, n_iter=50000, verbose=1)
 U.fit(X)
 U.save(fname='embedding.csv')
 
-print U.stress, U.correlation
+print('%4.2f %4.2f' % (U.stress, U.correlation))
 ```
 
 ## Todo list
-- [ ] Compatibility with python 3
+- [ ] Compare SPE performance with UMAP
+- [x] Compatibility with python 3
 - [x] Compatibility with the latest version of MDAnalysis (==0.17)
 - [ ] Unit tests
-- [ ] Accessible directly from pip
+- [x] Accessible directly from pip
 - [ ] Improve OpenCL performance (global/local memory)
 
 ## Citation
-Jérôme Eberhardt, Roland H. Stote, and Annick Dejaegere. (soon) *Unrolr: structural analysis of protein conformations using Stochastic Proximity Embedding.*
+Eberhardt, J., Stote, R. H., & Dejaegere, A. (2018). Unrolr: Structural analysis of protein conformations using stochastic proximity embedding. Journal of Computational Chemistry, 39(30), 2551-2557. https://doi.org/10.1002/jcc.25599
 
 ## License
 MIT
