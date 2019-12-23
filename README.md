@@ -33,7 +33,7 @@ $ conda activate unrolr
 $ conda install -c conda-forge mkl numpy scipy pandas matplotlib h5py MDAnalysis pyopencl ocl-icd-system
 ```
 
-3. Install unrolr
+3 . Install unrolr
 ```bash
 $ pip install unrolr
 ```
