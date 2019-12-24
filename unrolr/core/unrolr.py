@@ -24,7 +24,6 @@ import pyopencl as cl
 from .pca import PCA
 from ..utils import read_dataset
 from ..utils import is_opencl_env_defined
-from ..utils import transform_dihedral_to_metric
 from ..utils import transform_dihedral_to_circular_mean
 
 __author__ = "Jérôme Eberhardt"
@@ -38,7 +37,7 @@ __email__ = "qksoneo@gmail.com"
 class Unrolr():
 
     def __init__(self, r_neighbor, metric='dihedral', n_components=2, n_iter=10000,
-                 random_seed=None, init="pca", verbose=0):
+                 random_seed=None, init="random", learning_rate=1., epsilon=1e-4, verbose=0):
         # Check PYOPENCL_CTX environnment variable
         if not is_opencl_env_defined():
             print("Error: The environnment variable PYOPENCL_CTX is not defined !")
@@ -49,8 +48,8 @@ class Unrolr():
         self._n_components = n_components
         self._r_neighbor = r_neighbor
         self._n_iter = n_iter
-        self._learning_rate = 1.0
-        self._epsilon = 1e-5
+        self._learning_rate = learning_rate
+        self._epsilon = epsilon
         self._metric = metric
         # Set numpy random state and verbose
         self._init = init
@@ -100,9 +99,9 @@ class Unrolr():
         rij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, tmp.nbytes)
         dij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, tmp.nbytes)
 
+        # Initialization of the embedding
         if self._init == "pca":
             if self._metric == "dihedral":
-                #X = transform_dihedral_to_metric(X)
                 X = transform_dihedral_to_circular_mean(X)
 
             pca = PCA(self._n_components)
@@ -117,7 +116,7 @@ class Unrolr():
 
         freq_progression = self._n_iter / 100.
 
-        for i in xrange(0, self._n_iter + 1):
+        for i in range(0, self._n_iter + 1):
             if i % freq_progression == 0 and self._verbose:
                 percentage = float(i) / float(self._n_iter) * 100.
                 sys.stdout.write("\rUnrolr Optimization         : %8.3f %%" % percentage)
