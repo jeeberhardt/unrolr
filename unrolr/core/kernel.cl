@@ -17,7 +17,6 @@ __kernel void dihedral_distance(__global const float* a, __global float* r, int 
 __kernel void intramolecular_distance(__global const float* a, __global float* r, int x, int size)
 {
     int i = get_global_id(0);
-    float tmp;
 
     r[i] = 0.0;
 

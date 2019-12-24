@@ -30,6 +30,14 @@ __email__ = "qksoneo@gmail.com"
 
 class IntramolecularDistance(AnalysisBase):
     def __init__(self, top_file, trj_files, selection='backbone', **kwargs):
+        """Create IntramolecularDistance analysis object.
+        
+        Args:
+            top_file (str): filename of the topology file
+            trj_files (str or array-like): one or a list of trajectory files
+            selection (str): protein selection (default: backbone)
+
+        """
         # Used to store the result
         self.result = []
 
@@ -46,6 +54,18 @@ class IntramolecularDistance(AnalysisBase):
 
 
 def main():
+    """Main function, intramolecular_distances.py can be executed as a standalone script
+    
+    Args:
+        -p/--top (filename): topology file used for simulation (pdb, psf)
+        -t/--trj (filename): one or list of trajectory files
+        -s/--selection (str): protein selection
+        -o/--output (filename): hdf5 output file name (default: intramolecular_distances.h5)
+
+    Returns:
+        output (file): hdf5 file containing the intramolecular distances (default: intramolecular_distances.h5)
+
+    """
 
     parser = argparse.ArgumentParser(description="Extract intramolecular distances")
     parser.add_argument("-p", "--top", dest="top_file", required=True,

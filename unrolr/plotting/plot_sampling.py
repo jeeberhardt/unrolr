@@ -23,7 +23,16 @@ __email__ = "qksoneo@gmail.com"
 
 
 def plot_sampling(fname, df, of="r_neighbor", show=True):
+    """Helper function to plot results from sampling (neighborhood radii or iterations)
 
+    Args:
+        fname (str): filename of the figure
+        df (DataFrame): Pandas DataFrame obtained from functions neighborhood_radius_sampler or optimization_cycle_sampler
+        of (str): Show the evolution of stress and correlation in function of \
+        "r_neighbor" or "n_iter" (choices: r_neighbor or n_iter) (default: r_neighbor)
+        show (bool): show the plot (default: True)
+
+    """
     xlabel = r"Neighborhood $r_{c}$"
     logx = False
 

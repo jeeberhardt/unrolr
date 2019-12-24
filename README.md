@@ -1,13 +1,17 @@
-[![DOI](https://zenodo.org/badge/59756594.svg)](https://zenodo.org/badge/latestdoi/59756594)
+[![Documentation Status](https://readthedocs.org/projects/unrolr/badge/?version=latest)](https://unrolr.readthedocs.io/en/latest/?badge=latest)
 
 # Unrolr
-Conformational analysis of MD trajectories based on (pivot-based) Stochastic Proximity Embedding using dihedral distance as a metric. 
+Conformational analysis of MD trajectories based on (pivot-based) Stochastic Proximity Embedding using dihedral distance as a metric (https://github.com/jeeberhardt/unrolr).
 
 ## Prerequisites
 
 You need, at a minimum (requirements.txt):
 
+<<<<<<< HEAD
 * Python
+=======
+* Python 2.7 or python 3
+>>>>>>> 42d725a65ad6049cb460fd9236933dca7f0e4a23
 * NumPy
 * H5py
 * Pandas
@@ -37,7 +41,6 @@ $ conda install -c conda-forge mkl numpy scipy pandas matplotlib h5py MDAnalysis
 ```bash
 $ pip install unrolr
 ```
-
 ... or from the source directly
 
 ```bash

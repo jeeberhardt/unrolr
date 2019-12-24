@@ -27,7 +27,7 @@ from ..utils import is_opencl_env_defined
 from ..utils import transform_dihedral_to_circular_mean
 
 __author__ = "Jérôme Eberhardt"
-__copyright__ = "Copyright 2018, Jérôme Eberhardt"
+__copyright__ = "Copyright 2020, Jérôme Eberhardt"
 
 __lience__ = "MIT"
 __maintainer__ = "Jérôme Eberhardt"
@@ -38,6 +38,20 @@ class Unrolr():
 
     def __init__(self, r_neighbor, metric='dihedral', n_components=2, n_iter=10000,
                  random_seed=None, init="random", learning_rate=1., epsilon=1e-4, verbose=0):
+        """Initialize Unrolr object.
+        
+        Args:
+            r_neighbor (float): neighbor radius cutoff
+            metric (str): distance metric (choices: dihedral or intramolecular) (default: dihedral)
+            n_component (int): number of component of the final embedding (default: 2)
+            n_iter (int): number of optimization iteration (default: 10000)
+            random_seed (int): random seed (default: None)
+            init (str): method to initialize the initial embedding (random or pca)(default: random)
+            learning_rate (float): learning rate, aka computational temperature (default: 1)
+            epsilon (float): convergence criteria when computing final stress and correlation (default: 1e-4)
+            verbose (int): turn on:off verbose (default: False)
+
+        """
         # Check PYOPENCL_CTX environnment variable
         if not is_opencl_env_defined():
             print("Error: The environnment variable PYOPENCL_CTX is not defined !")
@@ -145,12 +159,6 @@ class Unrolr():
 
             self._learning_rate -= alpha
 
-            if i % 1000 == 0:
-                cl.enqueue_copy(queue, d, d_buf)
-                self.embedding = d
-                self._evaluate_embedding(X)
-                print('%4.2f %4.2f' % (self.stress, self.correlation))
-
         # Get the last embedding d
         cl.enqueue_copy(queue, d, d_buf)
 
@@ -239,9 +247,12 @@ class Unrolr():
                 old_stress = stress
                 old_correl = correl
 
-    def fit(self, X):
-        """
-        Run the Unrolr (pSPE + didhedral distance) method
+    def fit_transform(self, X):
+        """Run the Unrolr (pSPE + didhedral distance) method.
+        
+        Args:
+            X (ndarray): n-dimensional dataset (rows: frame; columns: angle)
+
         """
         # To be sure X is a single array
         X = np.ascontiguousarray(X, dtype=np.float32)
@@ -255,10 +266,13 @@ class Unrolr():
         self.embedding = self.embedding.T
 
     def save(self, fname='embedding.csv', frames=None):
-        """
-        Save all the data
-        """
+        """Save all the data
+        
+        Args:
+            fname (str): pathname of the csv file containing the final embedding (default: embedding.csv)
+            frames (array-like): 1d-array containing frame numbers (Default: None)
 
+        """
         fmt = ''
 
         if frames is not None:
@@ -277,7 +291,23 @@ class Unrolr():
 
 
 def main():
+    """Main function, unrolr.py can be executed as a standalone script
+    
+    Args:
+        -f/--dihedral (filename): hdf5 file containing dihedral angles
+        -r/--rc (float): neighborhood radius cutoff (default: 1)
+        -n/-ndim (int): number of dimension of the final embedding (default: 2)
+        -c/--cycles (int): number of optimization iteration (default: 1000)
+        --start (int): index of the first frame to analyze (default: 1)
+        --stop (int): index of the last frame to analyze (default: -1)
+        --skip (int): number of frame to skip (default: 1)
+        -o/--output (filename): csv output file name (default: embedding.csv)
+        -s/--seed: random seed (default: None)
 
+    Returns:
+        output (file): csv file containing the final embedding (default: embedding.csv)
+
+    """
     parser = argparse.ArgumentParser(description="Unrolr")
     parser.add_argument("-f", "--dihedral", dest="fname", required=True,
                         action="store", type=str,
@@ -322,7 +352,7 @@ def main():
     X = read_dataset(fname, "dihedral_angles", start, stop, skip)
 
     U = Unrolr(r_neighbor, n_components, n_iter, random_seed, verbose=1)
-    U.fit(X)
+    U.fit_transform(X)
 
     print("Random seed              : %8d" % U.random_seed)
     print("Stress                   : %8.3f" % U.stress)
