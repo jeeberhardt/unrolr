@@ -15,7 +15,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 import numpy as np
-import scipy
+from scipy import linalg
 
 __author__ = "Jérôme Eberhardt"
 __copyright__ = "Copyright 2020, Jérôme Eberhardt"
@@ -53,7 +53,7 @@ class PCA:
         # Compute covariance matrix
         cov = np.cov(X, rowvar=False)
         # PCA!!!
-        singular_values , components = scipy.linalg.eigh(cov)
+        singular_values , components = linalg.eigh(cov)
 
         # Sort by singular values
         idx = np.argsort(singular_values)[::-1]
