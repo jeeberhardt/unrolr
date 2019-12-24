@@ -7,11 +7,7 @@ Conformational analysis of MD trajectories based on (pivot-based) Stochastic Pro
 
 You need, at a minimum (requirements.txt):
 
-<<<<<<< HEAD
 * Python
-=======
-* Python 2.7 or python 3
->>>>>>> 42d725a65ad6049cb460fd9236933dca7f0e4a23
 * NumPy
 * H5py
 * Pandas
