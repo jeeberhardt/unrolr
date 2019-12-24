@@ -84,7 +84,7 @@ from unrolr.utils import save_dataset
 top_file = 'examples/inputs/villin.psf'
 trj_file = 'examples/inputs/villin.dcd'
 
-# Extract all calpha dihedral angles from trajectory and store them into a HDF5 file (start/stop/step are optionals)
+# Extract all calpha dihedral angles from trajectory and store them into a HDF5 file
 d = Dihedral(top_file, trj_file, selection='all', dihedral_type='calpha').run()
 X = d.result
 save_dataset('dihedral_angles.h5', "dihedral_angles", X)
