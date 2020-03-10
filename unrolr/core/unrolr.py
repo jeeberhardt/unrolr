@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Jérôme Eberhardt 2016-2018
+# Jérôme Eberhardt 2016-2020
 # Unrolr
 #
 # The core of Unrolr (pSPE + dihedral distance as metric)
@@ -12,19 +12,15 @@
 
 from __future__ import print_function
 
-import os
-import imp
 import sys
 import argparse
 
-import h5py
 import numpy as np
-import pyopencl as cl
 
-from .pca import PCA
+from .spe_opencl import _spe_opencl, _evaluate_embedding_opencl
+from .spe_cpu import _spe_cpu, _evaluate_embedding_cpu
 from ..utils import read_dataset
 from ..utils import is_opencl_env_defined
-from ..utils import transform_dihedral_to_circular_mean
 
 __author__ = "Jérôme Eberhardt"
 __copyright__ = "Copyright 2020, Jérôme Eberhardt"
@@ -36,8 +32,9 @@ __email__ = "qksoneo@gmail.com"
 
 class Unrolr():
 
-    def __init__(self, r_neighbor, metric='dihedral', n_components=2, n_iter=10000,
-                 random_seed=None, init="random", learning_rate=1., epsilon=1e-4, verbose=0):
+    def __init__(self, r_neighbor, metric="dihedral", n_components=2, n_iter=10000,
+                 random_seed=None, init="random", learning_rate=1., epsilon=1e-4, 
+                 verbose=0, platform="OpenCL"):
         """Initialize Unrolr object.
         
         Args:
@@ -53,10 +50,11 @@ class Unrolr():
 
         """
         # Check PYOPENCL_CTX environnment variable
-        if not is_opencl_env_defined():
-            print("Error: The environnment variable PYOPENCL_CTX is not defined !")
-            print("Tip: python -c \"import pyopencl as cl; cl.create_some_context()\"")
-            sys.exit(1)
+        if platform == "OpenCL":
+            if not is_opencl_env_defined():
+                print("Error: The environnment variable PYOPENCL_CTX is not defined !")
+                print("Tip: python -c \"import pyopencl as cl; cl.create_some_context()\"")
+                sys.exit(1)
 
         # pSPE parameters
         self._n_components = n_components
@@ -69,17 +67,11 @@ class Unrolr():
         self._init = init
         self._random_seed = self._set_random_state(random_seed)
         self._verbose = verbose
+        self._platform = platform
         # Output variable
         self.embedding = None
         self.stress = None
         self.correlation = None
-
-        # Read OpenCL kernel file
-        path = imp.find_module('unrolr')[1]
-        fname = os.path.join(path, 'core/kernel.cl')
-
-        with open(fname) as f:
-            self._kernel = f.read()
 
     def _set_random_state(self, seed=None):
         """
@@ -92,161 +84,6 @@ class Unrolr():
 
         return seed
 
-    def _spe(self, X):
-        """
-        The Unrolr (pSPE + dihedral_distance/intermolecular_distance) method itself!
-        """
-        alpha = self._learning_rate / float(self._n_iter)
-
-        # Create context and queue
-        ctx = cl.create_some_context()
-        queue = cl.CommandQueue(ctx)
-
-        # Compile kernel
-        program = cl.Program(ctx, self._kernel).build()
-
-        # Send dihedral angles to CPU/GPU
-        X_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=X)
-
-        # Allocate space on CPU/GPU to store rij and dij
-        tmp = np.zeros((X.shape[0],), dtype=np.float32)
-        rij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, tmp.nbytes)
-        dij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, tmp.nbytes)
-
-        # Initialization of the embedding
-        if self._init == "pca":
-            if self._metric == "dihedral":
-                X = transform_dihedral_to_circular_mean(X)
-
-            pca = PCA(self._n_components)
-            d = pca.fit_transform(X)
-            d = np.ascontiguousarray(d.T, dtype=np.float32)
-        else:
-            # Generate initial (random)
-            d = np.float32(np.random.rand(self._n_components, X.shape[0]))
-
-        # Send initial embedding to the CPU/GPU
-        d_buf = cl.Buffer(ctx, cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR, hostbuf=d)
-
-        freq_progression = self._n_iter / 100.
-
-        for i in range(0, self._n_iter + 1):
-            if i % freq_progression == 0 and self._verbose:
-                percentage = float(i) / float(self._n_iter) * 100.
-                sys.stdout.write("\rUnrolr Optimization         : %8.3f %%" % percentage)
-                sys.stdout.flush()
-
-            # Choose random embedding (pivot)
-            pivot = np.int32(np.random.randint(X.shape[0]))
-
-            if self._metric == 'dihedral':
-                # Compute dihedral distances
-                program.dihedral_distance(queue, (X.shape[0],), None, X_buf, rij_buf, 
-                                          pivot, np.int32(X.shape[1])).wait()
-            elif self._metric == 'intramolecular':
-                # Compute intramolecular distance
-                program.intramolecular_distance(queue, (X.shape[0],), None, X_buf, rij_buf, 
-                                                pivot, np.int32(X.shape[1])).wait()
-
-            # Compute euclidean distances
-            program.euclidean_distance(queue, (d.shape[1],), None, d_buf, 
-                                       dij_buf, pivot, np.int32(d.shape[1]), 
-                                       np.int32(d.shape[0])).wait()
-            # Stochastic Proximity Embbeding
-            program.spe(queue, d.shape, None, rij_buf, dij_buf, d_buf, pivot, 
-                        np.int32(d.shape[1]), np.float32(self._r_neighbor), 
-                        np.float32(self._learning_rate)).wait()
-
-            self._learning_rate -= alpha
-
-        # Get the last embedding d
-        cl.enqueue_copy(queue, d, d_buf)
-
-        if self._verbose:
-            print()
-
-        self.embedding = d
-
-    def _evaluate_embedding(self, X):
-        """
-        Dirty function to evaluate the final embedding
-        """
-        embedding = self.embedding
-        r_neighbor = self._r_neighbor
-
-        # Creation du contexte et de la queue
-        ctx = cl.create_some_context()
-        queue = cl.CommandQueue(ctx)
-
-        # On compile le kernel
-        program = cl.Program(ctx, self._kernel).build()
-
-        # Send dihedral angles and embedding on CPU/GPU
-        e_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=embedding)
-        X_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=X)
-
-        # Allocate memory
-        rij = np.zeros((X.shape[0],), dtype=np.float32)
-        dij = np.zeros((X.shape[0],), dtype=np.float32)
-        rij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, rij.nbytes)
-        dij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, dij.nbytes)
-
-        sij = np.zeros((X.shape[0],), dtype=np.float32)
-        sij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, sij.nbytes)
-
-        tmp_correl = []
-        tmp_sij_sum = 0.0
-        tmp_rij_sum = 0.0
-
-        old_stress = 999.
-        old_correl = 999.
-
-        while True:
-            # Choose random conformation as pivot
-            pivot = np.int32(np.random.randint(X.shape[0]))
-
-            if self._metric == 'dihedral':
-                # Dihedral distances
-                program.dihedral_distance(queue, (X.shape[0],), None, X_buf, rij_buf,
-                                           pivot, np.int32(X.shape[1])).wait()
-            elif self._metric == 'intramolecular':
-                # Dihedral distances
-                program.intramolecular_distance(queue, (X.shape[0],), None, X_buf, rij_buf,
-                                                pivot, np.int32(X.shape[1])).wait()
-
-            # Euclidean distances
-            program.euclidean_distance(queue, (embedding.shape[1],), None, e_buf,
-                                        dij_buf, pivot, np.int32(embedding.shape[1]),
-                                        np.int32(embedding.shape[0])).wait()
-            # Compute part of stress
-            program.stress(queue, (X.shape[0],), None, rij_buf, dij_buf, sij_buf,
-                           np.float32(r_neighbor)).wait()
-
-            # Get rij, dij and sij
-            cl.enqueue_copy(queue, rij, rij_buf)
-            cl.enqueue_copy(queue, dij, dij_buf)
-            cl.enqueue_copy(queue, sij, sij_buf)
-
-            # Compute current correlation
-            tmp = (np.dot(rij.T, dij) / rij.shape[0]) - (np.mean(rij) * np.mean(dij))
-            tmp_correl.append(tmp / (np.std(rij) * np.std(dij)))
-            correl = np.mean(tmp_correl)
-
-            # Compute current stress
-            tmp_sij_sum += np.sum(sij[~np.isnan(sij)])
-            tmp_rij_sum += np.sum(rij)
-            stress = tmp_sij_sum / tmp_rij_sum
-
-            # Test for convergence
-            if (np.abs(old_stress - stress) < self._epsilon) and (np.abs(old_correl - correl) < self._epsilon):
-                self.correlation = correl
-                self.stress = stress
-
-                break
-            else:
-                old_stress = stress
-                old_correl = correl
-
     def fit_transform(self, X):
         """Run the Unrolr (pSPE + didhedral distance) method.
         
@@ -254,18 +91,24 @@ class Unrolr():
             X (ndarray): n-dimensional dataset (rows: frame; columns: angle)
 
         """
-        # To be sure X is a single array
-        X = np.ascontiguousarray(X, dtype=np.float32)
+        if self._platform == "OpenCL":
+            _spe = _spe_opencl
+            _evaluate_embedding = _evaluate_embedding_opencl
+        else:
+            _spe = _spe_cpu
+            _evaluate_embedding = _evaluate_embedding_cpu
 
         # Fire off SPE calculation !!
-        self._spe(X)
+        self.embedding = _spe(X, self._r_neighbor, self._metric, self._init, 
+                              self._n_components, self._n_iter, self._learning_rate, self._verbose)
         # Evaluation embedding
-        self._evaluate_embedding(X)
+        self.correlation, self.stress = _evaluate_embedding(X, self.embedding, self._r_neighbor, 
+                                                            self._metric, self._epsilon)
 
         # Transpose embedding
         self.embedding = self.embedding.T
 
-    def save(self, fname='embedding.csv', frames=None):
+    def save(self, fname="embedding.csv", frames=None):
         """Save all the data
         
         Args:
@@ -273,7 +116,7 @@ class Unrolr():
             frames (array-like): 1d-array containing frame numbers (Default: None)
 
         """
-        fmt = ''
+        fmt = ""
 
         if frames is not None:
             # Add frame idx to embedding
