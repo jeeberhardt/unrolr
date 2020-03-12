@@ -109,7 +109,7 @@ def _spe_cpu(X, r_neighbor, metric="dihedral", init=None, n_components=2,
 
     if metric == "dihedral":
         d = _spe_dihedral(X, d, r_neighbor, n_iter, learning_rate, verbose)
-    elif metric == "intramolecular":
+    else:
         d = _spe_intramolecular(X, d, r_neighbor, n_iter, learning_rate, verbose)
 
     return d
@@ -124,6 +124,7 @@ def _evaluate_embedding_cpu(X, embedding, r_neighbor, metric="dihedral", epsilon
     correlation = None
     stress = None
 
+    """
     while True:
         # Choose random conformation as pivot
         pivot = np.random.randint(X.shape[0])
@@ -142,6 +143,6 @@ def _evaluate_embedding_cpu(X, embedding, r_neighbor, metric="dihedral", epsilon
             old_correl = correl
 
         break
+    """
 
     return correlation, stress
-
