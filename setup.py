@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Jérôme Eberhardt 2016-2018
+# Jérôme Eberhardt 2016-2020
 # Author: Jérôme Eberhardt <qksonoe@gmail.com>
 #
 # License: MIT
@@ -21,7 +21,7 @@ with open('README.md', 'r') as fh:
     long_description = fh.read()
 
 setup(name='unrolr',
-      version='0.5.0.1',
+      version='0.5.0.2',
       author='Jérôme Eberhardt',
       author_email='qksoneo@gmail.com',
       description='Dimensionality reduction method for MD trajectories',

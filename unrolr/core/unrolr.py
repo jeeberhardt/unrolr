@@ -49,6 +49,7 @@ class Unrolr():
             learning_rate (float): learning rate, aka computational temperature (default: 1)
             epsilon (float): convergence criteria when computing final stress and correlation (default: 1e-4)
             verbose (int): turn on:off verbose (default: False)
+            platform (str): platform to use for spe (OpenCL or CPU) (default: OpenCL)
 
         """
         # pSPE parameters
