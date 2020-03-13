@@ -9,6 +9,6 @@
 
 
 from .unrolr import Unrolr
-from .unrolr import PCA
+from .pca import PCA
 
 __all__ = ["Unrolr", "PCA"]

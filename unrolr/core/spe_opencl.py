@@ -10,11 +10,13 @@
 # License: MIT
 
 
+import os
+import sys
+
 import numpy as np
 import pyopencl as cl
 
-from .pca import PCA
-from ..utils import transform_dihedral_to_circular_mean
+from ..utils import path_module
 
 __author__ = "Jérôme Eberhardt"
 __copyright__ = "Copyright 2020, Jérôme Eberhardt"
@@ -25,7 +27,7 @@ __email__ = "qksoneo@gmail.com"
 
 
 def _read_kernel_file():
-    path = imp.find_module('unrolr')[1]
+    path = path_module('unrolr')
     fname = os.path.join(path, 'core/kernel.cl')
 
     with open(fname) as f:
@@ -34,15 +36,15 @@ def _read_kernel_file():
     return kernel
 
 
-def _spe_opencl(X, r_neighbor, metric="dihedral", init=None, n_components=2, 
+def _spe_opencl(r, d, r_neighbor, metric="dihedral", init=None, n_components=2, 
                 n_iter=10000, learning_rate=1., verbose=0):
     """
     The Unrolr (pSPE + dihedral_distance/intermolecular_distance) method itself!
     """
     alpha = learning_rate / float(n_iter)
     freq_progression = n_iter / 100.
-    # To be sure X is a single array
-    X = np.ascontiguousarray(X, dtype=np.float32)
+    r = np.ascontiguousarray(r, dtype=np.float32)
+    d = np.ascontiguousarray(d.T, dtype=np.float32)
 
     # Create context and queue
     ctx = cl.create_some_context()
@@ -53,25 +55,11 @@ def _spe_opencl(X, r_neighbor, metric="dihedral", init=None, n_components=2,
     program = cl.Program(ctx, kernel).build()
 
     # Send dihedral angles to CPU/GPU
-    X_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=X)
-
+    r_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=r)
     # Allocate space on CPU/GPU to store rij and dij
-    tmp = np.zeros((X.shape[0],), dtype=np.float32)
+    tmp = np.zeros((r.shape[0],), dtype=np.float32)
     rij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, tmp.nbytes)
     dij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, tmp.nbytes)
-
-    # Initialization of the embedding
-    if init == "pca":
-        if metric == "dihedral":
-            X = transform_dihedral_to_circular_mean(X)
-
-        pca = PCA(n_components)
-        d = pca.fit_transform(X)
-        d = np.ascontiguousarray(d.T, dtype=np.float32)
-    else:
-        # Generate initial (random)
-        d = np.float32(np.random.rand(n_components, X.shape[0]))
-
     # Send initial embedding to the CPU/GPU
     d_buf = cl.Buffer(ctx, cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR, hostbuf=d)
 
@@ -82,16 +70,16 @@ def _spe_opencl(X, r_neighbor, metric="dihedral", init=None, n_components=2,
             sys.stdout.flush()
 
         # Choose random embedding (pivot)
-        pivot = np.int32(np.random.randint(X.shape[0]))
+        pivot = np.int32(np.random.randint(r.shape[0]))
 
         if metric == 'dihedral':
             # Compute dihedral distances
-            program.dihedral_distance(queue, (X.shape[0],), None, X_buf, rij_buf, 
-                                      pivot, np.int32(X.shape[1])).wait()
+            program.dihedral_distance(queue, (r.shape[0],), None, r_buf, rij_buf, 
+                                      pivot, np.int32(r.shape[1])).wait()
         elif metric == 'intramolecular':
             # Compute intramolecular distance
-            program.intramolecular_distance(queue, (X.shape[0],), None, X_buf, rij_buf, 
-                                            pivot, np.int32(X.shape[1])).wait()
+            program.intramolecular_distance(queue, (r.shape[0],), None, r_buf, rij_buf, 
+                                            pivot, np.int32(r.shape[1])).wait()
 
         # Compute euclidean distances
         program.euclidean_distance(queue, (d.shape[1],), None, d_buf, 
@@ -111,10 +99,10 @@ def _spe_opencl(X, r_neighbor, metric="dihedral", init=None, n_components=2,
         print()
 
     # Return final embedding
-    return d
+    return d.T
 
 
-def _evaluate_embedding_opencl(X, embedding, r_neighbor, metric="dihedral", epsilon=1e-4):
+def _evaluate_embedding_opencl(r, d, r_neighbor, metric="dihedral", epsilon=1e-4):
     """
     Dirty function to evaluate the final embedding
     """
@@ -125,8 +113,9 @@ def _evaluate_embedding_opencl(X, embedding, r_neighbor, metric="dihedral", epsi
     old_correl = 999.
     correlation = None
     stress = None
-    # To be sure X is a single array
-    X = np.ascontiguousarray(X, dtype=np.float32)
+
+    r = np.ascontiguousarray(r, dtype=np.float32)
+    d = np.ascontiguousarray(d.T, dtype=np.float32)
 
     # Creation du contexte et de la queue
     ctx = cl.create_some_context()
@@ -137,37 +126,37 @@ def _evaluate_embedding_opencl(X, embedding, r_neighbor, metric="dihedral", epsi
     program = cl.Program(ctx, kernel).build()
 
     # Send dihedral angles and embedding on CPU/GPU
-    e_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=embedding)
-    X_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=X)
+    e_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=d)
+    r_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=r)
 
     # Allocate memory
-    rij = np.zeros((X.shape[0],), dtype=np.float32)
-    dij = np.zeros((X.shape[0],), dtype=np.float32)
+    rij = np.zeros((r.shape[0],), dtype=np.float32)
+    dij = np.zeros((r.shape[0],), dtype=np.float32)
     rij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, rij.nbytes)
     dij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, dij.nbytes)
 
-    sij = np.zeros((X.shape[0],), dtype=np.float32)
+    sij = np.zeros((r.shape[0],), dtype=np.float32)
     sij_buf = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, sij.nbytes)
 
     while True:
         # Choose random conformation as pivot
-        pivot = np.int32(np.random.randint(X.shape[0]))
+        pivot = np.int32(np.random.randint(r.shape[0]))
 
         if metric == 'dihedral':
             # Dihedral distances
-            program.dihedral_distance(queue, (X.shape[0],), None, X_buf, rij_buf,
-                                       pivot, np.int32(X.shape[1])).wait()
+            program.dihedral_distance(queue, (r.shape[0],), None, r_buf, rij_buf,
+                                       pivot, np.int32(r.shape[1])).wait()
         elif metric == 'intramolecular':
             # Dihedral distances
-            program.intramolecular_distance(queue, (X.shape[0],), None, X_buf, rij_buf,
-                                            pivot, np.int32(X.shape[1])).wait()
+            program.intramolecular_distance(queue, (r.shape[0],), None, r_buf, rij_buf,
+                                            pivot, np.int32(r.shape[1])).wait()
 
         # Euclidean distances
-        program.euclidean_distance(queue, (embedding.shape[1],), None, e_buf,
-                                    dij_buf, pivot, np.int32(embedding.shape[1]),
-                                    np.int32(embedding.shape[0])).wait()
+        program.euclidean_distance(queue, (d.shape[1],), None, e_buf,
+                                    dij_buf, pivot, np.int32(d.shape[1]),
+                                    np.int32(d.shape[0])).wait()
         # Compute part of stress
-        program.stress(queue, (X.shape[0],), None, rij_buf, dij_buf, sij_buf,
+        program.stress(queue, (r.shape[0],), None, rij_buf, dij_buf, sij_buf,
                        np.float32(r_neighbor)).wait()
 
         # Get rij, dij and sij
@@ -178,22 +167,18 @@ def _evaluate_embedding_opencl(X, embedding, r_neighbor, metric="dihedral", epsi
         # Compute current correlation
         tmp = (np.dot(rij.T, dij) / rij.shape[0]) - (np.mean(rij) * np.mean(dij))
         tmp_correl.append(tmp / (np.std(rij) * np.std(dij)))
-        correl = np.mean(tmp_correl)
+        correlation = np.mean(tmp_correl)
 
         # Compute current stress
-        tmp_sij_sum += np.sum(sij[~np.isnan(sij)])
+        tmp_sij_sum += np.nansum(sij)
         tmp_rij_sum += np.sum(rij)
         stress = tmp_sij_sum / tmp_rij_sum
 
         # Test for convergence
-        if (np.abs(old_stress - stress) < epsilon) and (np.abs(old_correl - correl) < epsilon):
-            correlation = correl
-            stress = stress
-
+        if (np.abs(old_stress - stress) < epsilon) and (np.abs(old_correl - correlation) < epsilon):
             break
-        else:
-            old_stress = stress
-            old_correl = correl
+
+        old_stress = stress
+        old_correl = correlation
 
     return correlation, stress
-

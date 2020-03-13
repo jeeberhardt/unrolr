@@ -17,10 +17,12 @@ import argparse
 
 import numpy as np
 
+from .pca import PCA
 from .spe_opencl import _spe_opencl, _evaluate_embedding_opencl
 from .spe_cpu import _spe_cpu, _evaluate_embedding_cpu
-from ..utils import read_dataset
 from ..utils import is_opencl_env_defined
+from ..utils import read_dataset
+from ..utils import transform_dihedral_to_circular_mean
 
 __author__ = "Jérôme Eberhardt"
 __copyright__ = "Copyright 2020, Jérôme Eberhardt"
@@ -84,13 +86,24 @@ class Unrolr():
 
         return seed
 
-    def fit_transform(self, X):
+    def fit_transform(self, r):
         """Run the Unrolr (pSPE + didhedral distance) method.
         
         Args:
-            X (ndarray): n-dimensional dataset (rows: frame; columns: angle)
+            r (ndarray): n-dimensional dataset (rows: frame; columns: angle)
 
         """
+        # Initialization of the embedding
+        if self._init == "pca":
+            if self._metric == "dihedral":
+                r = transform_dihedral_to_circular_mean(r)
+
+            pca = PCA(self._n_components)
+            d = pca.fit_transform(r)
+        else:
+            # Generate initial (random)
+            d = np.random.rand(r.shape[0], self._n_components)
+
         if self._platform == "OpenCL":
             _spe = _spe_opencl
             _evaluate_embedding = _evaluate_embedding_opencl
@@ -99,14 +112,16 @@ class Unrolr():
             _evaluate_embedding = _evaluate_embedding_cpu
 
         # Fire off SPE calculation !!
-        self.embedding = _spe(X, self._r_neighbor, self._metric, self._init, 
-                              self._n_components, self._n_iter, self._learning_rate, self._verbose)
-        # Evaluation embedding
-        self.correlation, self.stress = _evaluate_embedding(X, self.embedding, self._r_neighbor, 
-                                                            self._metric, self._epsilon)
+        self.embedding = _spe(r, d, self._r_neighbor, self._metric, self._init, 
+                              self._n_components, self._n_iter, self._learning_rate,
+                              self._verbose)
 
-        # Transpose embedding
-        self.embedding = self.embedding.T
+        # Evaluation embedding
+        correlation, stress = _evaluate_embedding(r, self.embedding, self._r_neighbor, 
+                                                  self._metric, self._epsilon)
+
+        self.stress = np.around(stress, decimals=4)
+        self.correlation = np.around(correlation, decimals=4) 
 
     def save(self, fname="embedding.csv", frames=None):
         """Save all the data

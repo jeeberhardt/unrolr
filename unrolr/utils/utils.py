@@ -15,6 +15,11 @@ from __future__ import print_function
 import os
 import sys
 
+if sys.version_info >= (3, ):
+    import importlib
+else:
+    import imp
+
 import h5py
 import pyopencl as cl
 import numpy as np
@@ -128,6 +133,23 @@ def is_opencl_env_defined():
         return True
     else:
         return False
+
+
+def path_module(module_name):
+    try:
+        specs = importlib.machinery.PathFinder().find_spec(module_name)
+
+        if specs is not None:
+            return specs.submodule_search_locations[0]
+    except:
+        try:
+            _, path, _ = imp.find_module(module_name)
+            abspath = os.path.abspath(path)
+            return abspath
+        except ImportError:
+            return None
+
+    return None
 
 
 def max_conformations_from_dataset(fname, dname):

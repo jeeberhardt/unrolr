@@ -10,11 +10,11 @@
 # License: MIT
 
 
+import os
+import sys
+
 import numpy as np
 from scipy.spatial.distance import cdist
-
-from .pca import PCA
-from ..utils import transform_dihedral_to_circular_mean
 
 __author__ = "Jérôme Eberhardt"
 __copyright__ = "Copyright 2020, Jérôme Eberhardt"
@@ -27,11 +27,10 @@ __email__ = "qksoneo@gmail.com"
 def _spe_dihedral(r, d, r_neighbor, n_iter=10000, learning_rate=1, verbose=0):
     alpha = float(learning_rate) / float(n_iter)
     freq_progression = float(n_iter) / 100.
-    l = 1. / r.shape[0]
+    epsilon = 1e-10
+    l = 1. / r.shape[1]
 
     for c in range(0, n_iter + 1):
-        j = 0
-
         if c % freq_progression == 0 and verbose:
             percentage = float(c) / float(n_iter) * 100.
             sys.stdout.write("\rUnrolr Optimization         : %8.3f %%" % percentage)
@@ -44,11 +43,9 @@ def _spe_dihedral(r, d, r_neighbor, n_iter=10000, learning_rate=1, verbose=0):
         dijs = cdist([d[i]], d)[0]
         # Dihedral distance
         rijs = np.sqrt(l * 0.5 * np.sum((1. - np.cos(r[i] - r)), axis=1))
-
-        for rij, dij in zip(rijs, dijs):
-            if ((rij <= r_neighbor) or (rij > r_neighbor and dij < rij)) and i != j:
-                d[j] = d[j] + (learning_rate * ((rij - dij) / (dij + epsilon)) * (d[j] - d[i]))
-            j += 1
+        # SPE
+        j = (rijs <= r_neighbor) | ((rijs > r_neighbor) & (dijs < rijs))
+        d[j] += (learning_rate * ((rijs[j] - dijs[j]) / (dijs[j] + epsilon)))[:, None] * (d[j] - d[i])
 
         learning_rate -= alpha
 
@@ -61,6 +58,7 @@ def _spe_dihedral(r, d, r_neighbor, n_iter=10000, learning_rate=1, verbose=0):
 def _spe_intramolecular(r, d, r_neighbor, n_iter=10000, learning_rate=1, verbose=0):
     alpha = float(learning_rate) / float(n_iter)
     freq_progression = float(n_iter) / 100.
+    epsilon = 1e-10
 
     for c in range(0, n_iter + 1):
         j = 0
@@ -77,11 +75,9 @@ def _spe_intramolecular(r, d, r_neighbor, n_iter=10000, learning_rate=1, verbose
         dijs = cdist([d[i]], d)[0]
         # Intramolecular distance
         rijs = np.sqrt(np.mean((r[i] - r)**2, axis=1))
-
-        for rij, dij in zip(rijs, dijs):
-            if ((rij <= r_neighbor) or (rij > r_neighbor and dij < rij)) and i != j:
-                d[j] = d[j] + (learning_rate * ((rij - dij) / (dij + epsilon)) * (d[j] - d[i]))
-            j += 1
+        # SPE
+        j = (rijs <= r_neighbor) | ((rijs > r_neighbor) & (dijs < rijs))
+        d[j] += (learning_rate * ((rijs[j] - dijs[j]) / (dijs[j] + epsilon)))[:, None] * (d[j] - d[i])
 
         learning_rate -= alpha
 
@@ -91,58 +87,68 @@ def _spe_intramolecular(r, d, r_neighbor, n_iter=10000, learning_rate=1, verbose
     return d
 
 
-def _spe_cpu(X, r_neighbor, metric="dihedral", init=None, n_components=2, 
+def _spe_cpu(r, d, r_neighbor, metric="dihedral", init=None, n_components=2, 
              n_iter=10000, learning_rate=1., verbose=0):
     """
     The Unrolr (pSPE + dihedral_distance/intermolecular_distance) method itself!
     """
-    # Initialization of the embedding
-    if init == "pca":
-        if metric == "dihedral":
-            X = transform_dihedral_to_circular_mean(X)
-
-        pca = PCA(n_components)
-        d = pca.fit_transform(X).T
-    else:
-        # Generate initial (random)
-        d = np.random.rand(n_components, X.shape[0])
-
     if metric == "dihedral":
-        d = _spe_dihedral(X, d, r_neighbor, n_iter, learning_rate, verbose)
-    else:
-        d = _spe_intramolecular(X, d, r_neighbor, n_iter, learning_rate, verbose)
+        d = _spe_dihedral(r, d, r_neighbor, n_iter, learning_rate, verbose)
+    elif metric == 'intramolecular':
+        d = _spe_intramolecular(r, d, r_neighbor, n_iter, learning_rate, verbose)
 
     return d
 
 
-def _evaluate_embedding_cpu(X, embedding, r_neighbor, metric="dihedral", epsilon=1e-4):
+def _evaluate_embedding_cpu(r, d, r_neighbor, metric="dihedral", epsilon=1e-4):
     """
     Dirty function to evaluate the final embedding
     """
+    # Ignore divide per zeros
+    np.seterr(divide='ignore', invalid='ignore')
+
+    tmp_correl = []
+    sij = []
+    tmp_sij_sum = 0.0
+    tmp_rij_sum = 0.0
     old_stress = 999.
     old_correl = 999.
     correlation = None
     stress = None
+    l = 1. / r.shape[1]
 
-    """
     while True:
         # Choose random conformation as pivot
-        pivot = np.random.randint(X.shape[0])
+        i = np.random.randint(r.shape[0])
+
+        # Euclidean distance
+        dijs = cdist([d[i]], d)[0]
 
         if metric == 'dihedral':
-            # Dihedral distances
+            rijs = np.sqrt(l * 0.5 * np.sum((1. - np.cos(r[i] - r)), axis=1))
         elif metric == 'intramolecular':
-            # Dihedral distances
+            rijs = np.sqrt(np.mean((r[i] - r)**2, axis=1))
+
+        # Compute current correlation
+        tmp = (np.dot(rijs.T, dijs) / rijs.shape[0]) - (np.mean(rijs) * np.mean(dijs))
+        tmp_correl.append(tmp / (np.std(rijs) * np.std(dijs)))
+        correlation = np.mean(tmp_correl)
+
+        # Compute current stress
+        j = (rijs <= r_neighbor) | (dijs < rijs)
+        sij = ((dijs[j] - rijs[j]) * (dijs[j] - rijs[j])) / (rijs[j])
+        tmp_sij_sum += np.nansum(sij)
+        tmp_rij_sum += np.sum(rijs)
+        stress = tmp_sij_sum / tmp_rij_sum
 
         # Test for convergence
-        if (np.abs(old_stress - stress) < epsilon) and (np.abs(old_correl - correl) < epsilon):
-            correlation = correl
-            stress = stress
-        else:
-            old_stress = stress
-            old_correl = correl
+        if (np.abs(old_stress - stress) < epsilon) and (np.abs(old_correl - correlation) < epsilon):
+            break
 
-        break
-    """
+        old_stress = stress
+        old_correl = correlation
+
+    # Restore numpy warnings
+    np.seterr(divide='warn', invalid='warn')
 
     return correlation, stress

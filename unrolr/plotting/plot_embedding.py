@@ -56,7 +56,7 @@ def _get_limit_histogram(hist):
     xlim = [np.nan, np.nan]
     ylim = [np.nan, np.nan]
 
-    for i in xrange(0, hist.shape[0]):
+    for i in range(0, hist.shape[0]):
         ix = np.where(np.isnan(hist[i,:])==False)[0]
         iy = np.where(np.isnan(hist[:,i])==False)[0]
 
