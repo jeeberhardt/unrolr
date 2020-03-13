@@ -90,7 +90,9 @@ X = d.result
 save_dataset('dihedral_angles.h5', "dihedral_angles", X)
 
 # Fit X using Unrolr (pSPE + dihedral distance) and save the embedding into a csv file
-U = Unrolr(r_neighbor=0.27, n_iter=50000, verbose=1)
+# The initial embedding is obtained using PCA (init = 'pca') with the OpenCL implementation
+# to run SPE, a CPU implementation can be used as an alternative (platform='CPU')
+U = Unrolr(r_neighbor=0.27, n_iter=50000, init='pca', platform='OpenCL', verbose=1)
 U.fit(X)
 U.save(fname='embedding.csv')
 
