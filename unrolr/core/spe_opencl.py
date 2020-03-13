@@ -36,10 +36,19 @@ def _read_kernel_file():
     return kernel
 
 
-def _spe_opencl(r, d, r_neighbor, metric="dihedral", init=None, n_components=2, 
-                n_iter=10000, learning_rate=1., verbose=0):
+def _spe_opencl(r, d, r_neighbor, metric="dihedral", n_iter=10000, learning_rate=1., verbose=0):
     """
-    The Unrolr (pSPE + dihedral_distance/intermolecular_distance) method itself!
+    The OpenCL implementation pSPE (dihedral_distance/intermolecular_distance)
+    
+    Args:
+        r (ndarray): n-dimensional dataset (rows: frame; columns: angle/intramolecular distance)
+        d (ndarray): projected embedding in low dim space
+        r_neighbor (float): neighbor radius cutoff
+        metric (str): distance metric (choices: dihedral or intramolecular) (default: dihedral)
+        n_iter (int): number of optimization iteration (default: 10000)
+        learning_rate (float): learning rate, aka computational temperature (default: 1)
+        verbose (int): turn on:off verbose (default: False)
+
     """
     alpha = learning_rate / float(n_iter)
     freq_progression = n_iter / 100.
@@ -104,7 +113,15 @@ def _spe_opencl(r, d, r_neighbor, metric="dihedral", init=None, n_components=2,
 
 def _evaluate_embedding_opencl(r, d, r_neighbor, metric="dihedral", epsilon=1e-4):
     """
-    Dirty function to evaluate the final embedding
+    Dirty OpenCL function to evaluate the final embedding by calculating the stress and correlation
+    
+    Args:
+        r (ndarray): n-dimensional dataset (rows: frame; columns: angle/intramolecular distance)
+        d (ndarray): the final projected embedding in low dim space
+        r_neighbor (float): neighbor radius cutoff
+        metric (str): distance metric (choices: dihedral or intramolecular) (default: dihedral)
+        epsilon (float): convergence criteria when computing final stress and correlation (default: 1e-4)
+
     """
     tmp_correl = []
     tmp_sij_sum = 0.0
