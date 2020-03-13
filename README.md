@@ -93,7 +93,7 @@ save_dataset('dihedral_angles.h5', "dihedral_angles", X)
 # The initial embedding is obtained using PCA (init = 'pca') with the OpenCL implementation
 # to run SPE, a CPU implementation can be used as an alternative (platform='CPU')
 U = Unrolr(r_neighbor=0.27, n_iter=50000, init='pca', platform='OpenCL', verbose=1)
-U.fit(X)
+U.fit_transform(X)
 U.save(fname='embedding.csv')
 
 print('%4.2f %4.2f' % (U.stress, U.correlation))

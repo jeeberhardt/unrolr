@@ -89,7 +89,7 @@ As the final step, after determining the optimal neighbourhood radius rc cutoff,
 .. code-block:: python
 
 	U = Unrolr(r_neighbor=0.27, n_iter=50000, verbose=1)
-	U.fit(X)
+	U.fit_transform(X)
 	U.save(fname='outputs/embedding.csv') 
 
 	# Or you can add an extra column with frame ids (frames=(start, stop, skip))
