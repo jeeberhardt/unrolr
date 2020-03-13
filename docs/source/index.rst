@@ -27,7 +27,7 @@ Molecular dynamics (MD) simulations are widely used to explore the conformationa
 
 	# Fit X using Unrolr (pSPE + dihedral distance) and save the embedding into a csv file
 	U = Unrolr(r_neighbor=0.27, n_iter=50000, verbose=1)
-	U.fit(X)
+	U.fit_transform(X)
 	U.save(fname='embedding.csv')
 
 	print('%4.2f %4.2f' % (U.stress, U.correlation))
