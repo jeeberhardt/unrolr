@@ -21,7 +21,7 @@ with open('README.md', 'r') as fh:
     long_description = fh.read()
 
 setup(name='unrolr',
-      version='0.4.0.6',
+      version='0.5',
       author='Jérôme Eberhardt',
       author_email='qksoneo@gmail.com',
       description='Dimensionality reduction method for MD trajectories',
@@ -43,8 +43,9 @@ setup(name='unrolr',
                'dihedral angles'],
       classifiers=[
             'License :: OSI Approved :: MIT License',
-            'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3.6',
+            'Programming Language :: Python :: 3.7',
+            'Programming Language :: Python :: 3.8',
             'Operating System :: Unix',
             'Operating System :: MacOS',
             'Topic :: Scientific/Engineering'
