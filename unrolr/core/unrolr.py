@@ -51,29 +51,29 @@ class Unrolr():
             verbose (int): turn on:off verbose (default: False)
 
         """
-        # Check PYOPENCL_CTX environnment variable
-        if platform == "OpenCL":
-            if not is_opencl_env_defined():
-                print("Error: The environnment variable PYOPENCL_CTX is not defined !")
-                print("Tip: python -c \"import pyopencl as cl; cl.create_some_context()\"")
-                sys.exit(1)
-
         # pSPE parameters
         self._n_components = n_components
         self._r_neighbor = r_neighbor
         self._n_iter = n_iter
         self._learning_rate = learning_rate
         self._epsilon = epsilon
-        self._metric = metric
+        self._metric = str(metric).lower()
         # Set numpy random state and verbose
-        self._init = init
+        self._init = str(init).lower()
         self._random_seed = self._set_random_state(random_seed)
         self._verbose = verbose
-        self._platform = platform
+        self._platform = str(platform).lower()
         # Output variable
         self.embedding = None
         self.stress = None
         self.correlation = None
+
+        # Check PYOPENCL_CTX environnment variable
+        if self._platform == "opencl":
+            if not is_opencl_env_defined():
+                print("Error: The environnment variable PYOPENCL_CTX is not defined !")
+                print("Tip: python -c \"import pyopencl as cl; cl.create_some_context()\"")
+                sys.exit(1)
 
     def _set_random_state(self, seed=None):
         """
@@ -104,7 +104,7 @@ class Unrolr():
             # Generate initial (random)
             d = np.random.rand(r.shape[0], self._n_components)
 
-        if self._platform == "OpenCL":
+        if self._platform == "opencl":
             _spe = _spe_opencl
             _evaluate_embedding = _evaluate_embedding_opencl
         else:
