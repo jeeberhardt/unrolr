@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "unrolr"
-version = "0.5"
+version = "0.5.0.1"
 description = "Dimensionality reduction method for MD trajectories"
 authors = ["jeeberhardt <qksoneo@gmail.com>"]
 license = "MIT"

@@ -112,9 +112,8 @@ class Unrolr():
             _evaluate_embedding = _evaluate_embedding_cpu
 
         # Fire off SPE calculation !!
-        self.embedding = _spe(r, d, self._r_neighbor, self._metric, self._init, 
-                              self._n_components, self._n_iter, self._learning_rate,
-                              self._verbose)
+        self.embedding = _spe(r, d, self._r_neighbor, self._metric, 
+                              self._n_iter, self._learning_rate, self._verbose)
 
         # Evaluation embedding
         correlation, stress = _evaluate_embedding(r, self.embedding, self._r_neighbor, 
