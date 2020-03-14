@@ -51,9 +51,10 @@ class Dihedral(AnalysisBase):
         super(Dihedral, self).__init__(self._ag.universe.trajectory, **kwargs)
 
     def _dihedral(self, positions):
-        """ Vectorized version of the dihedral angle function
-        Source: https://stackoverflow.com/questions/20305272/dihedral-torsion-angle-from-four-points-in-cartesian-coordinates-in-python"""
-        
+        """Vectorized version of the dihedral angle function
+        Source: https://stackoverflow.com/questions/20305272/dihedral-torsion-angle
+                -from-four-points-in-cartesian-coordinates-in-python
+        """
         b0 = -(positions[1::4] - positions[::4])
         b1 = positions[2::4] - positions[1::4]
         b2 = positions[3::4] - positions[2::4]
@@ -92,7 +93,7 @@ class Dihedral(AnalysisBase):
                     
                 for k, g in groupby(enumerate(residues), lambda x: x[0] - x[1]):
                     group = list(map(itemgetter(1), g))
-                    fragments.append((group[0], group[-1]))
+                    fragments.append(np.arange(group[0], group[-1] + 1))
 
                 for fragment in fragments:
                     if len(fragment) >= 4:
