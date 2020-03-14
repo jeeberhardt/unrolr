@@ -21,7 +21,7 @@ with open('README.md', 'r') as fh:
     long_description = fh.read()
 
 setup(name='unrolr',
-      version='0.5.0.2',
+      version='0.5.0.3',
       author='Jérôme Eberhardt',
       author_email='qksoneo@gmail.com',
       description='Dimensionality reduction method for MD trajectories',
