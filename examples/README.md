@@ -13,6 +13,11 @@ from unrolr.feature_extraction import Dihedral
 from unrolr.sampling import neighborhood_radius_sampler, optimization_cycle_sampler
 from unrolr.plotting import plot_sampling
 from unrolr.utils import save_dataset
+
+
+init = 'random' # or init = 'pca'
+platform = 'OpenCL' # platform = 'CPU'
+
 ```
 
 ### Extraction of dihedral angles
@@ -23,7 +28,7 @@ The first step will be the extraction of all the pseudo C-alpha dihedral angles 
 top_file = 'inputs/villin.psf'
 trj_file = 'inputs/villin.dcd'
 
-d = Dihedral(top_file, trj_file, selection='all', dihedral_type='calpha', start=0, stop=None, step=1).run()
+d = Dihedral(top_file, trj_file, selection='all', dihedral_type='calpha').run(start=0, stop=None, step=1)
 X = d.result
 save_dataset('dihedral_angles.h5', "dihedral_angles", X)
 ```
@@ -40,9 +45,9 @@ As the optimal value of rc depends of the studied system, we can quickly test mu
 
 ```python
 # We will sample neighorhood radius every 0.05
-r_neighbors = np.linspace(0.1, 1.0, (1 / 0.05) - 1)
+r_neighbors = np.linspace(0.1, 1.0, int((1 / 0.05) - 1))
 
-df = neighborhood_radius_sampler(X[::2,], r_neighbors, n_iter=5000, n_runs=5)
+df = neighborhood_radius_sampler(X[::2,], r_neighbors, n_iter=5000, n_runs=5, init=init, platform=platform)
 df.to_csv('r_neighbor_vs_stress_correlation.csv', index=False)
 plot_sampling('r_neighbor_vs_stress_correlation.png', df, of='r_neighbor', show=False)
 ```
@@ -62,7 +67,7 @@ Generally, from my personal experience, the minimal number of optimization cycle
 ```python
 n_iters = [500, 1000, 5000, 10000, 50000, 100000]
 
-df = optimization_cycle_sampler(X[::2,], n_iters, r_neighbor=0.27)
+df = optimization_cycle_sampler(X[::2,], n_iters, r_neighbor=0.27, init=init, platform=platform)
 df.to_csv('n_iter_vs_stress_correlation.csv', index=False)
 plot_sampling('n_iter_vs_stress_correlation.png', df, of='n_iter', show=False)
 ```
@@ -80,8 +85,8 @@ It can be seen that a minimum number of 10.000 cycles of optimization, at least,
 As the final step, after determining the optimal neighbourhood radius rc cutoff, equal to 0.27 in this case, and the minimal number of optimization cycles, at least 10.000 cycles, the pSPE method can now be applied to the complete data set.
 
 ```python
-U = Unrolr(r_neighbor=0.27, n_iter=50000, verbose=1)
-U.fit(X)
+U = Unrolr(r_neighbor=0.27, n_iter=50000, init=init, platform=platform, verbose=1)
+U.fit_transform(X)
 U.save(fname='outputs/embedding.csv') 
 
 # Or you can add an extra column with frame ids (frames=(start, stop, skip))
