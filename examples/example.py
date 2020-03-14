@@ -6,6 +6,7 @@ import numpy as np
 
 from unrolr import Unrolr
 from unrolr.feature_extraction import Dihedral
+from unrolr.plotting import plot_sampling
 from unrolr.sampling import neighborhood_radius_sampler, optimization_cycle_sampler
 from unrolr.utils import save_dataset
 
