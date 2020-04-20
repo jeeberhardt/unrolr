@@ -30,7 +30,8 @@ For any other informations, the official installation guide of PyOpenCL is avail
 ```bash
 $ conda create -n unrolr python=3
 $ conda activate unrolr
-$ conda install -c conda-forge mkl numpy scipy pandas matplotlib h5py MDAnalysis pyopencl ocl-icd-system
+$ conda install -c conda-forge mkl numpy scipy pandas matplotlib h5py MDAnalysis pyopencl
+$ conda install -c conda-forge ocl-icd-system # For Linux users only
 ```
 
 3 . Install unrolr
